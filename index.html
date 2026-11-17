@@ -5,19 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WINGブロック崩し</title>
     <style>
-        * { box-sizing: border-box; user-select: none; }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
             margin: 0; padding: 0;
             background-color: #111; color: #fff;
             font-family: monospace;
             display: flex; justify-content: center; align-items: center;
-            height: 100vh; overflow: hidden;
+            height: 100vh; overflow: hidden; touch-action: none;
         }
         #container {
             width: 100%; max-width: 400px; height: 100%; max-height: 800px;
             background: #1a1a1a; border: 2px solid #00ffff;
             display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-            position: relative; padding: 20px;
+            position: relative;
         }
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -25,7 +25,14 @@
             background: #1a1a1a; padding: 20px; z-index: 10;
         }
         .screen.active { display: flex; }
-        h1 { color: #00ffff; font-size: 22px; text-align: center; margin-bottom: 20px; }
+        h1 { color: #00ffff; font-size: 22px; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        .blink {
+            animation: blinkAnime 1s infinite;
+            color: #ff00ff; cursor: pointer;
+        }
+        @keyframes blinkAnime {
+            0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; }
+        }
         .btn {
             background: #333; color: #fff; border: 2px solid #00ffff;
             padding: 12px 25px; font-size: 16px; border-radius: 5px;
@@ -45,27 +52,27 @@
     <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="btn" onclick="showScreen('screen-mode')" style="color:#ff00ff; border-color:#ff00ff;">- スタート -</div>
+        <div class="btn blink" onclick="showScreen('screen-mode')">- スタート -</div>
     </div>
 
     <!-- ② モード選択画面 -->
     <div id="screen-mode" class="screen">
         <h1>モード選択</h1>
-        <div class="btn" onclick="startGame('normal')">① ノーマルモード</div>
-        <div class="btn" onclick="startGame('speed')">② スピードモード</div>
-        <div class="btn" onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555;">もどる</div>
+        <div class="btn" onclick="startGame('normal')">① ノーマルモード<br><span style="font-size:12px;color:#aaa;">(縦10×横20・得点アタック)</span></div>
+        <div class="btn" onclick="startGame('speed')">② スピードモード<br><span style="font-size:12px;color:#aaa;">(縦10×横10・30点先取)</span></div>
+        <div class="btn" onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:30px;">もどる</div>
     </div>
 
     <!-- ③ ゲームプレイ画面 -->
     <div id="screen-game" class="screen" style="padding: 0; justify-content: flex-start;">
         <div class="hud">
             <span id="hud-score">点: 0</span>
-            <span id="hud-mode">モード: ノーマル</span>
+            <span id="hud-info">目標: -</span>
         </div>
         <div style="flex-grow:1; display:flex; justify-content:center; align-items:center; width:100%;">
             <canvas id="game-canvas"></canvas>
         </div>
-        <div class="btn" onclick="showScreen('screen-title')" style="margin: 10px; width: 90%;">やめる</div>
+        <div class="btn" onclick="showScreen('screen-mode')" style="margin: 10px auto; width: 90%; padding: 8px;">やめる</div>
     </div>
 </div>
 
@@ -74,6 +81,7 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
         if(screenId === 'screen-game') initGame();
+        else if(gameInterval) clearInterval(gameInterval);
     }
 
     let canvas, ctx;
@@ -88,8 +96,10 @@
         
         if(currentMode === 'normal') {
             boardWidth = 10; boardHeight = 20; blockSize = 20;
+            document.getElementById('hud-info').innerText = 'スピードUP制';
         } else {
-            boardWidth = 10; boardHeight = 10; blockSize = 28;
+            boardWidth = 10; boardHeight = 10; blockSize = 26;
+            document.getElementById('hud-info').innerText = '目標: 30点';
         }
         
         canvas.width = boardWidth * blockSize;
@@ -98,7 +108,6 @@
         board = Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0));
         score = 0;
         document.getElementById('hud-score').innerText = `点: ${score}`;
-        document.getElementById('hud-mode').innerText = `モード: ${currentMode === 'normal' ? 'ノーマル' : 'スピード'}`;
 
         spawnPiece();
         if(gameInterval) clearInterval(gameInterval);
@@ -111,11 +120,11 @@
     }
 
     function spawnPiece() {
-        // シンプルなテトリスブロック（L字など）
         const shapes = [
             [[1,1],[1,1]], // 四角
             [[1,1,1,1]], // 棒
-            [[0,1,0],[1,1,1]] // T字
+            [[0,1,0],[1,1,1]], // T字
+            [[1,0,0],[1,1,1]]  // L字
         ];
         const shape = shapes[Math.floor(Math.random() * shapes.length)];
         currentPiece = {
@@ -134,9 +143,9 @@
             clearLines();
             spawnPiece();
             if(checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-                alert('ゲームオーバー！ スコア: ' + score);
+                alert('ゲームオーバー！ スコア: ' + score + '点');
                 clearInterval(gameInterval);
-                showScreen('screen-title');
+                showScreen('screen-mode');
                 return;
             }
         }
@@ -181,10 +190,10 @@
         if(lines > 0) {
             score += lines;
             document.getElementById('hud-score').innerText = `点: ${score}`;
-            if(currentMode === 'speed' && score >= 10) {
-                alert('クリア！おめでとうございます！');
+            if(currentMode === 'speed' && score >= 30) {
+                alert('🏆 目標達成！YOU WIN!! 🎆');
                 clearInterval(gameInterval);
-                showScreen('screen-title');
+                showScreen('screen-mode');
             }
         }
     }
@@ -193,7 +202,7 @@
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 盤面
+        // 固定されたブロック
         for(let r=0; r<boardHeight; r++) {
             for(let c=0; c<boardWidth; c++) {
                 if(board[r][c] !== 0) {
@@ -203,7 +212,7 @@
             }
         }
 
-        // 落下中
+        // 操作中のブロック
         if(currentPiece) {
             ctx.fillStyle = '#ff00ff';
             for(let r=0; r<currentPiece.matrix.length; r++) {
@@ -218,7 +227,7 @@
         }
     }
 
-    // タッチ操作（左右移動と回転）
+    // スマホタッチ・PCクリック操作（左右スワイプで移動、タップで回転）
     let startX = 0;
     window.addEventListener('touchstart', e => { if(e.touches.length) startX = e.touches[0].clientX; });
     window.addEventListener('touchmove', e => {
@@ -233,7 +242,6 @@
     });
     window.addEventListener('touchend', () => {
         if(!currentPiece) return;
-        // タップで回転
         let m = currentPiece.matrix;
         let rot = m[0].map((_, i) => m.map(row => row[i]).reverse());
         if(!checkCollision(currentPiece.x, currentPiece.y, rot)) {
