@@ -4,561 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WINGブロック崩し</title>
-    <!-- ネットワーク接続用 PeerJS CDN -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
         body {
             margin: 0;
             padding: 0;
             background-color: #111;
             color: #fff;
-            font-family: monospace;
+            font-family: sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
+            width: 100vw;
             height: 100vh;
             overflow: hidden;
-            touch-action: none;
         }
-        #game-container {
+        #app {
             width: 100%;
-            max-width: 420px;
+            max-width: 400px;
             height: 100%;
-            max-height: 840px;
+            max-height: 800px;
             background: #1a1a1a;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-            border: 2px solid #333;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            overflow: hidden;
-        }
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            border: 2px solid #00ffff;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: #1a1a1a;
+            position: relative;
             padding: 20px;
-            z-index: 10;
-        }
-        .hidden {
-            display: none !important;
+            box-sizing: border-box;
         }
         h1 {
-            font-size: 22px;
-            text-align: center;
-            margin-bottom: 30px;
+            font-size: 24px;
             color: #00ffff;
-            text-shadow: 0 0 10px rgba(0,255,255,0.5);
+            text-align: center;
+            margin-bottom: 40px;
         }
-        .blink {
-            animation: blinkAnime 1s infinite;
-            font-size: 20px;
-            color: #ff00ff;
-            cursor: pointer;
-            margin-top: 20px;
-            padding: 10px;
-        }
-        @keyframes blinkAnime {
-            0% { opacity: 1; }
-            50% { opacity: 0.2; }
-            100% { opacity: 1; }
-        }
-        button, select, input {
+        .btn {
             background: #333;
             color: #fff;
             border: 2px solid #00ffff;
-            padding: 12px 20px;
-            font-size: 16px;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
             margin: 10px 0;
-            border-radius: 5px;
-            width: 85%;
-            max-width: 260px;
+            width: 80%;
             text-align: center;
         }
-        button:active {
+        .btn:active {
             background: #00ffff;
             color: #000;
         }
-        input {
-            background: #222;
-        }
-        .grid-3x3 {
-            display: grid;
-            grid-template-columns: repeat(3, 50px);
-            grid-template-rows: repeat(3, 50px);
-            gap: 4px;
-            margin: 15px 0;
-        }
-        .grid-3x6 {
-            display: grid;
-            grid-template-columns: repeat(6, 40px);
-            grid-template-rows: repeat(3, 40px);
-            gap: 3px;
-            margin: 15px 0;
-        }
-        .cell-box {
-            background: #333;
-            border: 1px solid #555;
-            cursor: pointer;
-        }
-        .cell-box.active {
-            background: #ff00ff;
-            box-shadow: 0 0 8px #ff00ff;
-        }
-        .hud {
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            padding: 8px;
-            font-size: 14px;
-            background: #222;
-            border-bottom: 1px solid #444;
-        }
-        canvas {
-            display: block;
-            background: #000;
-        }
-        #fireworks-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .screen {
+            display: none;
             width: 100%;
             height: 100%;
-            pointer-events: none;
-            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .screen.active {
+            display: flex;
         }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <canvas id="fireworks-canvas"></canvas>
-
-    <!-- 1. タイトル画面 -->
-    <div id="screen-title" class="screen">
+<div id="app">
+    <!-- タイトル画面 -->
+    <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="blink" onclick="goToSetup()">- スタート -</div>
+        <div class="btn" onclick="goToMenu()">- スタート -</div>
     </div>
 
-    <!-- 2. ルーム設定・人数・ホスト/ゲスト選択画面 -->
-    <div id="screen-setup" class="screen hidden">
-        <h1>ルーム設定</h1>
-        <label>プレイ人数 (1〜5名)</label>
-        <select id="player-count">
-            <option value="1">1名</option>
-            <option value="2">2名</option>
-            <option value="3">3名</option>
-            <option value="4">4名</option>
-            <option value="5">5名</option>
-        </select>
-        
-        <button onclick="selectHost()">ホストとして作成</button>
-        <button onclick="showJoinInput()">ゲストとして参加</button>
-        
-        <div id="join-area" class="hidden" style="width:100%; display:flex; flex-direction:column; align-items:center;">
-            <input type="text" id="room-key-input" placeholder="4桁の数字を入力" maxlength="4">
-            <button onclick="joinGame()">接続する</button>
-        </div>
-        <button onclick="backToTitle()" style="margin-top:10px; border-color:#ff5555; color:#ff5555;">戻る</button>
-    </div>
-
-    <!-- 3. キー待機・名前入力画面 -->
-    <div id="screen-lobby" class="screen hidden">
-        <h1 id="lobby-status">接続待機中...</h1>
-        <div id="key-display" style="font-size:22px; margin:10px 0; color:#00ff00;"></div>
-        <p id="connection-count" style="font-size:14px; color:#aaa;"></p>
-        
-        <div id="name-input-area" style="width:100%; display:flex; flex-direction:column; align-items:center;">
-            <label>プレイヤーネーム (ひらがな6文字)</label>
-            <input type="text" id="player-name" placeholder="例: やまだ" maxlength="6">
-            <button onclick="submitName()">決定してブロック生成へ</button>
-        </div>
-    </div>
-
-    <!-- 4. ブロック生成画面 -->
-    <div id="screen-builder" class="screen hidden">
-        <h3 id="builder-instruction" style="font-size:14px; text-align:center; margin:5px;">ブロックを生成</h3>
-        <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center;"></div>
-        <div style="display:flex; gap:10px; flex-direction:column; width:100%; align-items:center;">
-            <button id="btn-toggle-size" onclick="toggleBuilderSize()">2個1モード切替</button>
-            <button onclick="completeBlockCreation()">決定 (完了)</button>
-        </div>
-    </div>
-
-    <!-- 5. モード選択 -->
-    <div id="screen-mode-select" class="screen hidden">
-        <h1>ゲームモード選択</h1>
-        <button onclick="startMainGame('normal')">① ノーマルモード</button>
-        <button onclick="startMainGame('speed')">② スピードモード</button>
-    </div>
-
-    <!-- 6. メインゲーム画面 -->
-    <div id="screen-game" class="screen hidden" style="padding: 0; justify-content: flex-start;">
-        <div class="hud">
-            <span id="hud-name">名: -</span>
-            <span id="hud-score">点: 0</span>
-            <span id="hud-info">目標: 30</span>
-        </div>
-        <div style="flex-grow:1; display:flex; justify-content:center; align-items:center; width:100%;">
-            <canvas id="game-canvas"></canvas>
-        </div>
-    </div>
-
-    <!-- 7. 結果発表画面 -->
-    <div id="screen-result" class="screen hidden">
-        <h1>結果発表</h1>
-        <div id="result-list" style="width:90%; max-height:200px; overflow-y:auto; margin-bottom:20px; font-size:16px; text-align:center;"></div>
-        <button onclick="location.reload()">タイトルに戻る</button>
+    <!-- メニュー画面 -->
+    <div id="screen-menu" class="screen">
+        <h1>モード選択</h1>
+        <div class="btn" onclick="alert('正常に動作しています！')">テストボタン</div>
+        <div class="btn" onclick="goToTitle()" style="border-color:#ff5555; color:#ff5555;">もどる</div>
     </div>
 </div>
 
 <script>
-    let peer = null;
-    let conn = null;
-    let connections = [];
-    let isHost = false;
-    let roomKey = "";
-    let myName = "";
-    let maxPlayers = 1;
-    let generatedBlocks = [];
-    let currentBuilderSize = 3;
-    let builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
-    
-    let gameMode = 'normal';
-    let boardWidth = 10, boardHeight = 20;
-    let blockSize = 20;
-    let board = [];
-    let score = 0;
-    let currentPiece = null;
-    let dropInterval = 1000;
-    let lastTime = 0;
-    let animationFrameId = null;
-
     function showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        const target = document.getElementById(screenId);
-        if(target) target.classList.remove('hidden');
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
     }
 
-    function goToSetup() { showScreen('screen-setup'); }
-    function backToTitle() { showScreen('screen-title'); }
-    function showJoinInput() { document.getElementById('join-area').classList.remove('hidden'); }
-
-    function selectHost() {
-        isHost = true;
-        maxPlayers = parseInt(document.getElementById('player-count').value);
-        roomKey = Math.floor(1000 + Math.random() * 9000).toString();
-        
-        try {
-            peer = new Peer('wing_block_' + roomKey);
-            peer.on('open', (id) => {
-                document.getElementById('key-display').innerText = `ルームキー: ${roomKey}`;
-                document.getElementById('lobby-status').innerText = 'ホスト: 参加待ち';
-                document.getElementById('connection-count').innerText = `接続: 1 / ${maxPlayers}`;
-                showScreen('screen-lobby');
-            });
-            peer.on('error', (err) => {
-                alert('ルーム作成エラー (すでに使われているキーの可能性があります。もう一度試してください)');
-            });
-            peer.on('connection', (c) => {
-                connections.push(c);
-                document.getElementById('connection-count').innerText = `接続: ${connections.length + 1} / ${maxPlayers}`;
-            });
-        } catch(e) {
-            // PeerJSが読み込めない環境やオフラインの場合のフォールバック
-            document.getElementById('key-display').innerText = `オフラインモード (キー: ${roomKey})`;
-            document.getElementById('lobby-status').innerText = '1人プレイ用準備完了';
-            showScreen('screen-lobby');
-        }
+    function goToMenu() {
+        showScreen('screen-menu');
     }
 
-    function joinGame() {
-        isHost = false;
-        const key = document.getElementById('room-key-input').value;
-        if(key.length !== 4) { alert('4桁の数字を入力してください'); return; }
-        
-        roomKey = key;
-        peer = new Peer();
-        peer.on('open', (id) => {
-            conn = peer.connect('wing_block_' + roomKey);
-            document.getElementById('lobby-status').innerText = '接続しました';
-            showScreen('screen-lobby');
-        });
-    }
-
-    function submitName() {
-        const nameInput = document.getElementById('player-name').value;
-        if(!nameInput.match(/^[ぁ-んー]{1,6}$/)) {
-            alert('ひらがな6文字以内で入力してください');
-            return;
-        }
-        myName = nameInput;
-        document.getElementById('name-input-area').classList.add('hidden');
-        document.getElementById('lobby-status').innerText = 'ブロック生成へ進みます...';
-        
-        setTimeout(() => {
-            showBuilderScreen();
-        }, 500);
-    }
-
-    let requiredBlockCount = 5;
-
-    function showBuilderScreen() {
-        showScreen('screen-builder');
-        document.getElementById('builder-instruction').innerText = `ブロックを ${requiredBlockCount}個作ります (${generatedBlocks.length + 1}個目)`;
-        renderBuilderGrid();
-    }
-
-    function renderBuilderGrid() {
-        const container = document.getElementById('builder-canvas-container');
-        container.innerHTML = '';
-        const cols = currentBuilderSize;
-        const rows = 3;
-        
-        const gridDiv = document.createElement('div');
-        gridDiv.className = cols === 3 ? 'grid-3x3' : 'grid-3x6';
-        
-        for(let r=0; r<rows; r++) {
-            for(let c=0; c<cols; c++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell-box' + (builderGrid[r][c] === 1 ? ' active' : '');
-                const cr = r, cc = c;
-                cell.onclick = () => {
-                    builderGrid[cr][cc] = builderGrid[cr][cc] === 1 ? 0 : 1;
-                    renderBuilderGrid();
-                };
-                gridDiv.appendChild(cell);
-            }
-        }
-        container.appendChild(gridDiv);
-    }
-
-    function toggleBuilderSize() {
-        currentBuilderSize = currentBuilderSize === 3 ? 6 : 3;
-        builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
-        renderBuilderGrid();
-    }
-
-    function completeBlockCreation() {
-        let hasCell = builderGrid.flat().some(v => v === 1);
-        if(!hasCell) {
-            alert('1つ以上のマスをタップしてください');
-            return;
-        }
-
-        generatedBlocks.push(builderGrid.map(row => [...row]));
-        builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
-        
-        if(generatedBlocks.length < requiredBlockCount) {
-            showBuilderScreen();
-        } else {
-            if(isHost || !peer) {
-                showScreen('screen-mode-select');
-            } else {
-                alert('準備完了！ホストの開始を待っています');
-            }
-        }
-    }
-
-    function startMainGame(mode) {
-        gameMode = mode;
-        showScreen('screen-game');
-        
-        document.getElementById('hud-name').innerText = `名: ${myName || 'プレイヤー'}`;
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-
-        if(gameMode === 'normal') {
-            boardWidth = 10;
-            boardHeight = 20;
-            blockSize = Math.floor(Math.min(320 / boardWidth, 500 / boardHeight));
-        } else {
-            boardWidth = 10;
-            boardHeight = 10;
-            blockSize = Math.floor(Math.min(320 / boardWidth, 400 / boardHeight));
-            document.getElementById('hud-info').innerText = `目標:30点`;
-        }
-
-        canvas.width = boardWidth * blockSize;
-        canvas.height = boardHeight * blockSize;
-
-        board = Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0));
-        score = 0;
-
-        spawnPiece();
-        lastTime = performance.now();
-        if(animationFrameId) cancelAnimationFrame(animationFrameId);
-        animationFrameId = requestAnimationFrame(gameLoop);
-    }
-
-    function spawnPiece() {
-        const template = generatedBlocks.length > 0 ? generatedBlocks[Math.floor(Math.random() * generatedBlocks.length)] : [[1,1],[1,1]];
-        currentPiece = {
-            matrix: template,
-            x: Math.floor(boardWidth / 2) - Math.floor(template[0].length / 2),
-            y: 0
-        };
-    }
-
-    function gameLoop(time) {
-        const dt = time - lastTime;
-        if(dt > dropInterval) {
-            updateGame();
-            lastTime = time;
-        }
-        drawGame();
-        animationFrameId = requestAnimationFrame(gameLoop);
-    }
-
-    function updateGame() {
-        currentPiece.y++;
-        if(checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-            currentPiece.y--;
-            mergePiece();
-            clearLines();
-            spawnPiece();
-            if(checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-                gameOver();
-            }
-        }
-    }
-
-    function checkCollision(px, py, matrix) {
-        for(let r=0; r<matrix.length; r++) {
-            for(let c=0; c<matrix[0].length; c++) {
-                if(matrix[r][c] === 1) {
-                    let nx = px + c;
-                    let ny = py + r;
-                    if(nx < 0 || nx >= boardWidth || ny >= boardHeight) return true;
-                    if(ny >= 0 && board[ny][nx] !== 0) return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    function mergePiece() {
-        for(let r=0; r<currentPiece.matrix.length; r++) {
-            for(let c=0; c<currentPiece.matrix[0].length; c++) {
-                if(currentPiece.matrix[r][c] === 1) {
-                    let ny = currentPiece.y + r;
-                    let nx = currentPiece.x + c;
-                    if(ny >= 0 && ny < boardHeight && nx >= 0 && nx < boardWidth) {
-                        board[ny][nx] = 1;
-                    }
-                }
-            }
-        }
-    }
-
-    function clearLines() {
-        let linesCleared = 0;
-        for(let r = boardHeight - 1; r >= 0; r--) {
-            if(board[r].every(cell => cell !== 0)) {
-                board.splice(r, 1);
-                board.unshift(Array(boardWidth).fill(0));
-                linesCleared++;
-                r++;
-            }
-        }
-        if(linesCleared > 0) {
-            score += linesCleared;
-            document.getElementById('hud-score').innerText = `点: ${score}`;
-            if(gameMode === 'speed' && score >= 30) {
-                gameVictory();
-            }
-        }
-    }
-
-    function drawGame() {
-        const canvas = document.getElementById('game-canvas');
-        if(!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        for(let r=0; r<boardHeight; r++) {
-            for(let c=0; c<boardWidth; c++) {
-                if(board[r][c] !== 0) {
-                    ctx.fillStyle = '#00ffff';
-                    ctx.fillRect(c * blockSize, r * blockSize, blockSize - 1, blockSize - 1);
-                }
-            }
-        }
-
-        if(currentPiece) {
-            ctx.fillStyle = '#ff00ff';
-            for(let r=0; r<currentPiece.matrix.length; r++) {
-                for(let c=0; c<currentPiece.matrix[0].length; c++) {
-                    if(currentPiece.matrix[r][c] === 1) {
-                        let px = (currentPiece.x + c) * blockSize;
-                        let py = (currentPiece.y + r) * blockSize;
-                        if(py >= 0) ctx.fillRect(px, py, blockSize - 1, blockSize - 1);
-                    }
-                }
-            }
-        }
-    }
-
-    // タッチ操作
-    let touchStartX = 0;
-    window.addEventListener('touchstart', (e) => {
-        if(e.touches.length > 0) touchStartX = e.touches[0].clientX;
-    }, {passive: true});
-
-    window.addEventListener('touchmove', (e) => {
-        if(!currentPiece || e.touches.length === 0) return;
-        let dx = e.touches[0].clientX - touchStartX;
-        if(Math.abs(dx) > 30) {
-            if(dx > 0 && !checkCollision(currentPiece.x + 1, currentPiece.y, currentPiece.matrix)) {
-                currentPiece.x++;
-            } else if(dx < 0 && !checkCollision(currentPiece.x - 1, currentPiece.y, currentPiece.matrix)) {
-                currentPiece.x--;
-            }
-            touchStartX = e.touches[0].clientX;
-        }
-    }, {passive: true});
-
-    window.addEventListener('touchend', () => {
-        if(gameMode === 'normal' && currentPiece) {
-            // タップで回転
-            const m = currentPiece.matrix;
-            let rows = m.length, cols = m[0].length;
-            let rotated = Array(cols).fill(0).map(() => Array(rows).fill(0));
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) rotated[c][rows - 1 - r] = m[r][c];
-            }
-            if(!checkCollision(currentPiece.x, currentPiece.y, rotated)) {
-                currentPiece.matrix = rotated;
-            }
-        }
-    });
-
-    function gameOver() {
-        cancelAnimationFrame(animationFrameId);
-        showScreen('screen-result');
-        document.getElementById('result-list').innerHTML = `<h3>ゲームオーバー</h3><p>スコア: ${score}点</p>`;
-    }
-
-    function gameVictory() {
-        cancelAnimationFrame(animationFrameId);
-        showScreen('screen-result');
-        document.getElementById('result-list').innerHTML = `<h3>YOU WIN!! 🎆</h3><p>スコア: ${score}点</p>`;
+    function goToTitle() {
+        showScreen('screen-title');
     }
 </script>
+
 </body>
 </html>
