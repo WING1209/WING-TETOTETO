@@ -19,7 +19,7 @@
             width: 100%; max-width: 400px; height: 100%; max-height: 800px;
             background: #1a1a1a; border: 2px solid #00ffff;
             display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-            position: relative;
+            position: relative; overflow: hidden;
         }
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -68,15 +68,21 @@
             padding: 10px; font-size: 14px; background: #222; border-bottom: 1px solid #444;
         }
         canvas { background: #000; display: block; }
+        #fireworks-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
+        }
     </style>
 </head>
 <body>
 
 <div id="container">
-    <!-- ① タイトル画面 (Ver 1.2) -->
+    <canvas id="fireworks-canvas"></canvas>
+
+    <!-- ① タイトル画面 (Ver 1.3) -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 1.2 (マルチ対戦通信追加)</div>
+        <div class="version">Ver 1.3 (結果発表・花火追加)</div>
         <div class="btn blink" onclick="showScreen('screen-name')">- スタート -</div>
     </div>
 
@@ -100,7 +106,7 @@
         <button onclick="completeCurrentBlock()" style="background:#005555; border-color:#00ffff;">このブロックで決定</button>
     </div>
 
-    <!-- ④ ルーム設定・ホスト/ゲスト選択画面 -->
+    <!-- ④ ルーム設定画面 -->
     <div id="screen-room" class="screen">
         <h1>ルーム対戦設定</h1>
         <label style="font-size:13px; color:#aaa;">プレイ人数</label>
@@ -152,6 +158,13 @@
         </div>
         <button onclick="location.reload()" style="margin: 8px auto; width: 90%; padding: 6px; font-size:14px; border-color:#ff5555; color:#ff5555;">やめる</button>
     </div>
+
+    <!-- ⑧ 結果発表・ランキング画面 -->
+    <div id="screen-result" class="screen">
+        <h1 id="result-title">結果発表</h1>
+        <div id="result-list" style="width:90%; max-height:220px; overflow-y:auto; margin:15px 0; background:#222; border:1px solid #444; border-radius:5px; padding:10px; font-size:15px;"></div>
+        <button onclick="location.reload()" style="background:#005555; border-color:#00ffff;">タイトルに戻る</button>
+    </div>
 </div>
 
 <script>
@@ -161,13 +174,12 @@
     let currentBuilderSize = 3;
     let builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
 
-    // PeerJS通信用変数
     let peer = null;
     let isHost = false;
     let roomKey = "";
     let maxPlayers = 1;
-    let connections = []; // ホスト側が保持するゲストとのコネクション一覧
-    let guestConnection = null; // ゲスト側が保持するホストとのコネクション
+    let connections = [];
+    let guestConnection = null;
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -188,7 +200,6 @@
         showScreen('screen-builder');
     }
 
-    // --- ブロック生成エディタ ---
     function initBuilder() {
         currentBuilderSize = 3;
         builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
@@ -260,11 +271,10 @@
         if(generatedBlocks.length < requiredBlockCount) {
             renderBuilderGrid();
         } else {
-            showScreen('screen-room'); // ブロックが完成したらルーム設定へ
+            showScreen('screen-room');
         }
     }
 
-    // --- PeerJS ネットワーク処理 ---
     function showJoinInput() {
         document.getElementById('join-box').style.display = 'flex';
     }
@@ -283,7 +293,7 @@
                 document.getElementById('btn-start-game').style.display = 'block';
                 showScreen('screen-lobby');
             });
-            peer.on('error', (err) => {
+            peer.on('error', () => {
                 alert('ルーム作成エラー。別のキーで再試行してください。');
             });
             peer.on('connection', (c) => {
@@ -316,9 +326,7 @@
                 guestConnection.on('open', () => {
                     document.getElementById('key-display').innerText = `ルーム ${roomKey} に接続成功！`;
                     document.getElementById('lobby-status').innerText = 'ホストの開始を待っています...';
-                    document.getElementById('btn-start-game').style.display = 'none'; // ゲストはホストの開始を待つ
-                    
-                    // 自分のブロックをホストに送信
+                    document.getElementById('btn-start-game').style.display = 'none';
                     guestConnection.send({ type: 'blocks', blocks: generatedBlocks });
                     showScreen('screen-lobby');
                 });
@@ -333,7 +341,6 @@
 
     function proceedToModeSelect() {
         if(isHost) {
-            // ゲスト全員にモード選択へ進む合図を送る（今回はシンプルにホストが選択画面へ進む）
             connections.forEach(c => c.send({ type: 'start_mode' }));
         }
         showScreen('screen-mode');
@@ -397,9 +404,7 @@
             clearLines();
             spawnPiece();
             if(checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-                alert(`ゲーム終了！ ${myName}さんのスコア: ${score}点`);
-                clearInterval(gameInterval);
-                showScreen('screen-mode');
+                endGame('ゲームオーバー');
                 return;
             }
         }
@@ -445,11 +450,60 @@
             score += lines;
             document.getElementById('hud-score').innerText = `点: ${score}`;
             if(currentMode === 'speed' && score >= 30) {
-                alert(`🏆 目標達成！ ${myName}さん YOU WIN!! 🎆`);
-                clearInterval(gameInterval);
-                showScreen('screen-mode');
+                endGame('🏆 YOU WIN!!');
+                return;
             }
         }
+    }
+
+    function endGame(statusText) {
+        clearInterval(gameInterval);
+        showScreen('screen-result');
+        document.getElementById('result-title').innerText = statusText;
+        
+        let resultList = document.getElementById('result-list');
+        resultList.innerHTML = `<div style="padding:5px; border-bottom:1px solid #444;"><strong>1位: ${myName}</strong> - ${score}点</div>`;
+        
+        if(statusText.includes('WIN')) {
+            startFireworks();
+        }
+    }
+
+    function startFireworks() {
+        const fcanvas = document.getElementById('fireworks-canvas');
+        const fctx = fcanvas.getContext('2d');
+        fcanvas.width = window.innerWidth;
+        fcanvas.height = window.innerHeight;
+
+        let particles = [];
+        for(let i=0; i<60; i++) {
+            particles.push({
+                x: fcanvas.width / 2,
+                y: fcanvas.height / 2,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                alpha: 1
+            });
+        }
+
+        function animateFireworks() {
+            fctx.clearRect(0,0,fcanvas.width, fcanvas.height);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.02;
+                fctx.save();
+                fctx.globalAlpha = Math.max(0, p.alpha);
+                fctx.fillStyle = p.color;
+                fctx.beginPath();
+                fctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+                fctx.fill();
+                fctx.restore();
+            });
+            requestAnimationFrame(animateFireworks);
+        }
+        animateFireworks();
     }
 
     function drawGame() {
@@ -479,7 +533,6 @@
         }
     }
 
-    // タッチ操作
     let startX = 0;
     window.addEventListener('touchstart', e => { if(e.touches.length) startX = e.touches[0].clientX; });
     window.addEventListener('touchmove', e => {
