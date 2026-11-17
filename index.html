@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WINGブロック崩し</title>
+    <!-- ネットワーク接続用 PeerJS CDN -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
@@ -39,15 +41,14 @@
         @keyframes blinkAnime {
             0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; }
         }
-        button, input {
+        button, input, select {
             background: #333; color: #fff; border: 2px solid #00ffff;
             padding: 12px 20px; font-size: 16px; border-radius: 5px;
             margin: 8px 0; width: 85%; max-width: 260px; text-align: center;
         }
         button:active { background: #00ffff; color: #000; }
-        input { background: #222; }
+        input, select { background: #222; }
         
-        /* ブロックエディタのグリッド */
         .grid-3x3 {
             display: grid; grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(3, 55px);
             gap: 5px; margin: 15px 0;
@@ -72,10 +73,10 @@
 <body>
 
 <div id="container">
-    <!-- ① タイトル画面 (Ver1.1) -->
+    <!-- ① タイトル画面 (Ver 1.2) -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 1.1 (カスタム生成追加)</div>
+        <div class="version">Ver 1.2 (マルチ対戦通信追加)</div>
         <div class="btn blink" onclick="showScreen('screen-name')">- スタート -</div>
     </div>
 
@@ -88,7 +89,7 @@
         <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">もどる</button>
     </div>
 
-    <!-- ③ ブロック生成画面 (3x3 / 3x6切替対応) -->
+    <!-- ③ ブロック生成画面 -->
     <div id="screen-builder" class="screen">
         <h3 id="builder-instruction">ブロックを作ろう (1/5個目)</h3>
         <p style="font-size:12px; color:#00ffff; margin:0;">マスをタップして形を作ります</p>
@@ -99,15 +100,47 @@
         <button onclick="completeCurrentBlock()" style="background:#005555; border-color:#00ffff;">このブロックで決定</button>
     </div>
 
-    <!-- ④ モード選択画面 -->
-    <div id="screen-mode" class="screen">
-        <h1>モード選択</h1>
-        <div class="btn" onclick="startGame('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦10×横20・スピードUP制)</span></div>
-        <div class="btn" onclick="startGame('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・30点先取)</span></div>
-        <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">タイトルに戻る</button>
+    <!-- ④ ルーム設定・ホスト/ゲスト選択画面 -->
+    <div id="screen-room" class="screen">
+        <h1>ルーム対戦設定</h1>
+        <label style="font-size:13px; color:#aaa;">プレイ人数</label>
+        <select id="player-count">
+            <option value="1">1名 (ソロプレイ)</option>
+            <option value="2">2名</option>
+            <option value="3">3名</option>
+            <option value="4">4名</option>
+            <option value="5">5名</option>
+        </select>
+        
+        <button onclick="setupAsHost()" style="background:#004444;">ホストとして作成</button>
+        <button onclick="showJoinInput()" style="background:#440044;">ゲストとして参加</button>
+        
+        <div id="join-box" style="display:none; width:100%; flex-direction:column; align-items:center;">
+            <input type="text" id="room-key-input" placeholder="4桁のルームキー" maxlength="4">
+            <button onclick="joinAsGuest()" style="background:#005500;">ルームに接続</button>
+        </div>
+        
+        <button onclick="showScreen('screen-builder')" style="border-color:#ff5555; color:#ff5555; margin-top:10px;">もどる</button>
     </div>
 
-    <!-- ⑤ ゲームプレイ画面 -->
+    <!-- ⑤ 待機ロビー画面 -->
+    <div id="screen-lobby" class="screen">
+        <h1 id="lobby-status">接続待機中...</h1>
+        <div id="key-display" style="font-size:24px; color:#00ff00; margin:15px 0; font-weight:bold;"></div>
+        <p id="connection-count" style="font-size:14px; color:#ccc;"></p>
+        
+        <button id="btn-start-game" onclick="proceedToModeSelect()" style="display:none; background:#00aa00; border-color:#00ff00; font-weight:bold;">ゲーム開始！</button>
+        <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">最初に戻る</button>
+    </div>
+
+    <!-- ⑥ モード選択画面 -->
+    <div id="screen-mode" class="screen">
+        <h1>ゲームモード選択</h1>
+        <div class="btn" onclick="startGame('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦10×横20・スピードUP制)</span></div>
+        <div class="btn" onclick="startGame('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・30点先取)</span></div>
+    </div>
+
+    <!-- ⑦ ゲームプレイ画面 -->
     <div id="screen-game" class="screen" style="padding: 0; justify-content: flex-start;">
         <div class="hud">
             <span id="hud-name">名: -</span>
@@ -117,16 +150,24 @@
         <div style="flex-grow:1; display:flex; justify-content:center; align-items:center; width:100%;">
             <canvas id="game-canvas"></canvas>
         </div>
-        <button onclick="showScreen('screen-mode')" style="margin: 8px auto; width: 90%; padding: 6px; font-size:14px; border-color:#ff5555; color:#ff5555;">やめる</button>
+        <button onclick="location.reload()" style="margin: 8px auto; width: 90%; padding: 6px; font-size:14px; border-color:#ff5555; color:#ff5555;">やめる</button>
     </div>
 </div>
 
 <script>
     let myName = "";
     let generatedBlocks = [];
-    let requiredBlockCount = 5; // 作るブロックの数
-    let currentBuilderSize = 3; // 3または6
+    let requiredBlockCount = 5;
+    let currentBuilderSize = 3;
     let builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
+
+    // PeerJS通信用変数
+    let peer = null;
+    let isHost = false;
+    let roomKey = "";
+    let maxPlayers = 1;
+    let connections = []; // ホスト側が保持するゲストとのコネクション一覧
+    let guestConnection = null; // ゲスト側が保持するホストとのコネクション
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -143,11 +184,11 @@
             return;
         }
         myName = val;
-        generatedBlocks = []; // リセット
+        generatedBlocks = [];
         showScreen('screen-builder');
     }
 
-    // --- ブロック生成エディタ関連 ---
+    // --- ブロック生成エディタ ---
     function initBuilder() {
         currentBuilderSize = 3;
         builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
@@ -168,11 +209,8 @@
         const gridDiv = document.createElement('div');
         gridDiv.className = currentBuilderSize === 3 ? 'grid-3x3' : 'grid-3x6';
 
-        const cols = currentBuilderSize;
-        const rows = 3;
-
-        for(let r=0; r<rows; r++) {
-            for(let c=0; c<cols; c++) {
+        for(let r=0; r<3; r++) {
+            for(let c=0; c<currentBuilderSize; c++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell-box' + (builderGrid[r][c] === 1 ? ' active' : '');
                 let cr = r, cc = c;
@@ -187,9 +225,7 @@
     }
 
     function completeCurrentBlock() {
-        // 有効なマス（1）があるかチェック
         let hasCell = false;
-        let trimmedGrid = [];
         let minC = 6, maxC = -1, minR = 3, maxR = -1;
 
         for(let r=0; r<3; r++) {
@@ -209,7 +245,6 @@
             return;
         }
 
-        // 周りの余白をトリミングして形をキレイにする
         let pieceMatrix = [];
         for(let r = minR; r <= maxR; r++) {
             let rowArr = [];
@@ -223,10 +258,85 @@
         builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
 
         if(generatedBlocks.length < requiredBlockCount) {
-            renderBuilderGrid(); // 次のブロック作成へ
+            renderBuilderGrid();
         } else {
-            showScreen('screen-mode'); // 全て作ったらモード選択へ
+            showScreen('screen-room'); // ブロックが完成したらルーム設定へ
         }
+    }
+
+    // --- PeerJS ネットワーク処理 ---
+    function showJoinInput() {
+        document.getElementById('join-box').style.display = 'flex';
+    }
+
+    function setupAsHost() {
+        isHost = true;
+        maxPlayers = parseInt(document.getElementById('player-count').value);
+        roomKey = Math.floor(1000 + Math.random() * 9000).toString();
+
+        try {
+            peer = new Peer('wing_block_' + roomKey);
+            peer.on('open', () => {
+                document.getElementById('key-display').innerText = `ルームキー: ${roomKey}`;
+                document.getElementById('lobby-status').innerText = 'ホスト: 参加待ち...';
+                document.getElementById('connection-count').innerText = `接続: 1 / ${maxPlayers}名`;
+                document.getElementById('btn-start-game').style.display = 'block';
+                showScreen('screen-lobby');
+            });
+            peer.on('error', (err) => {
+                alert('ルーム作成エラー。別のキーで再試行してください。');
+            });
+            peer.on('connection', (c) => {
+                connections.push(c);
+                document.getElementById('connection-count').innerText = `接続: ${connections.length + 1} / ${maxPlayers}名`;
+                c.on('data', (data) => {
+                    if(data.type === 'blocks') {
+                        generatedBlocks.push(...data.blocks);
+                    }
+                });
+            });
+        } catch(e) {
+            alert('通信モジュールの初期化に失敗しました');
+        }
+    }
+
+    function joinAsGuest() {
+        isHost = false;
+        const key = document.getElementById('room-key-input').value.trim();
+        if(key.length !== 4) {
+            alert('4桁のルームキーを入力してください');
+            return;
+        }
+        roomKey = key;
+
+        try {
+            peer = new Peer();
+            peer.on('open', () => {
+                guestConnection = peer.connect('wing_block_' + roomKey);
+                guestConnection.on('open', () => {
+                    document.getElementById('key-display').innerText = `ルーム ${roomKey} に接続成功！`;
+                    document.getElementById('lobby-status').innerText = 'ホストの開始を待っています...';
+                    document.getElementById('btn-start-game').style.display = 'none'; // ゲストはホストの開始を待つ
+                    
+                    // 自分のブロックをホストに送信
+                    guestConnection.send({ type: 'blocks', blocks: generatedBlocks });
+                    showScreen('screen-lobby');
+                });
+                guestConnection.on('error', () => {
+                    alert('ルームに接続できませんでした。キーを確認してください。');
+                });
+            });
+        } catch(e) {
+            alert('接続処理でエラーが発生しました');
+        }
+    }
+
+    function proceedToModeSelect() {
+        if(isHost) {
+            // ゲスト全員にモード選択へ進む合図を送る（今回はシンプルにホストが選択画面へ進む）
+            connections.forEach(c => c.send({ type: 'start_mode' }));
+        }
+        showScreen('screen-mode');
     }
 
     // --- メインゲーム関連 ---
@@ -267,7 +377,6 @@
     }
 
     function spawnPiece() {
-        // ユーザーが作ったブロックからランダムに選択（作られていない場合はデフォルト四角）
         const template = (generatedBlocks.length > 0) 
             ? generatedBlocks[Math.floor(Math.random() * generatedBlocks.length)]
             : [[1,1],[1,1]];
@@ -370,7 +479,7 @@
         }
     }
 
-    // タッチ操作（スワイプ移動、タップ回転）
+    // タッチ操作
     let startX = 0;
     window.addEventListener('touchstart', e => { if(e.touches.length) startX = e.touches[0].clientX; });
     window.addEventListener('touchmove', e => {
