@@ -25,15 +25,12 @@
             background: #1a1a1a; padding: 20px; z-index: 10;
         }
         .screen.active { display: flex; }
-        h1 { color: #00ffff; font-size: 22px; text-align: center; margin-bottom: 10px; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        h1, h3 { color: #00ffff; text-align: center; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        h1 { font-size: 22px; margin-bottom: 5px; }
+        h3 { font-size: 16px; margin: 10px 0; }
         .version {
-            color: #00ff00;
-            font-size: 14px;
-            margin-bottom: 30px;
-            background: #222;
-            padding: 4px 10px;
-            border-radius: 4px;
-            border: 1px dashed #00ff00;
+            color: #00ff00; font-size: 12px; margin-bottom: 20px;
+            background: #222; padding: 3px 8px; border-radius: 4px; border: 1px dashed #00ff00;
         }
         .blink {
             animation: blinkAnime 1s infinite;
@@ -42,12 +39,29 @@
         @keyframes blinkAnime {
             0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; }
         }
-        .btn {
+        button, input {
             background: #333; color: #fff; border: 2px solid #00ffff;
-            padding: 12px 25px; font-size: 16px; border-radius: 5px;
-            cursor: pointer; margin: 10px 0; width: 80%; text-align: center;
+            padding: 12px 20px; font-size: 16px; border-radius: 5px;
+            margin: 8px 0; width: 85%; max-width: 260px; text-align: center;
         }
-        .btn:active { background: #00ffff; color: #000; }
+        button:active { background: #00ffff; color: #000; }
+        input { background: #222; }
+        
+        /* ブロックエディタのグリッド */
+        .grid-3x3 {
+            display: grid; grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(3, 55px);
+            gap: 5px; margin: 15px 0;
+        }
+        .grid-3x6 {
+            display: grid; grid-template-columns: repeat(6, 42px); grid-template-rows: repeat(3, 42px);
+            gap: 4px; margin: 15px 0;
+        }
+        .cell-box {
+            background: #222; border: 2px solid #555; cursor: pointer; border-radius: 4px;
+        }
+        .cell-box.active {
+            background: #ff00ff; border-color: #ff88ff; box-shadow: 0 0 10px #ff00ff;
+        }
         .hud {
             width: 100%; display: flex; justify-content: space-around;
             padding: 10px; font-size: 14px; background: #222; border-bottom: 1px solid #444;
@@ -58,42 +72,164 @@
 <body>
 
 <div id="container">
-    <!-- ① タイトル画面 (Ver1.0表記を追加) -->
+    <!-- ① タイトル画面 (Ver1.1) -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 1.0 (更新確認用)</div>
-        <div class="btn blink" onclick="showScreen('screen-mode')">- スタート -</div>
+        <div class="version">Ver 1.1 (カスタム生成追加)</div>
+        <div class="btn blink" onclick="showScreen('screen-name')">- スタート -</div>
     </div>
 
-    <!-- ② モード選択画面 -->
+    <!-- ② 名前入力画面 -->
+    <div id="screen-name" class="screen">
+        <h1>プレイヤー名入力</h1>
+        <p style="font-size:13px; color:#aaa; text-align:center; margin-bottom:15px;">ひらがな6文字以内で入力してください</p>
+        <input type="text" id="player-name-input" placeholder="例: やまだ" maxlength="6">
+        <button onclick="submitName()">決定してブロック作成へ</button>
+        <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">もどる</button>
+    </div>
+
+    <!-- ③ ブロック生成画面 (3x3 / 3x6切替対応) -->
+    <div id="screen-builder" class="screen">
+        <h3 id="builder-instruction">ブロックを作ろう (1/5個目)</h3>
+        <p style="font-size:12px; color:#00ffff; margin:0;">マスをタップして形を作ります</p>
+        
+        <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center; min-height:180px;"></div>
+        
+        <button onclick="toggleBuilderSize()" id="btn-toggle-size" style="background:#224; border-color:#88ff88; color:#88ff88; padding:8px 15px; font-size:14px;">モード切替: 3×3</button>
+        <button onclick="completeCurrentBlock()" style="background:#005555; border-color:#00ffff;">このブロックで決定</button>
+    </div>
+
+    <!-- ④ モード選択画面 -->
     <div id="screen-mode" class="screen">
         <h1>モード選択</h1>
-        <div class="btn" onclick="startGame('normal')">① ノーマルモード<br><span style="font-size:12px;color:#aaa;">(縦10×横20・得点アタック)</span></div>
-        <div class="btn" onclick="startGame('speed')">② スピードモード<br><span style="font-size:12px;color:#aaa;">(縦10×横10・30点先取)</span></div>
-        <div class="btn" onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:30px;">もどる</div>
+        <div class="btn" onclick="startGame('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦10×横20・スピードUP制)</span></div>
+        <div class="btn" onclick="startGame('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・30点先取)</span></div>
+        <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">タイトルに戻る</button>
     </div>
 
-    <!-- ③ ゲームプレイ画面 -->
+    <!-- ⑤ ゲームプレイ画面 -->
     <div id="screen-game" class="screen" style="padding: 0; justify-content: flex-start;">
         <div class="hud">
+            <span id="hud-name">名: -</span>
             <span id="hud-score">点: 0</span>
             <span id="hud-info">目標: -</span>
         </div>
         <div style="flex-grow:1; display:flex; justify-content:center; align-items:center; width:100%;">
             <canvas id="game-canvas"></canvas>
         </div>
-        <div class="btn" onclick="showScreen('screen-mode')" style="margin: 10px auto; width: 90%; padding: 8px;">やめる</div>
+        <button onclick="showScreen('screen-mode')" style="margin: 8px auto; width: 90%; padding: 6px; font-size:14px; border-color:#ff5555; color:#ff5555;">やめる</button>
     </div>
 </div>
 
 <script>
+    let myName = "";
+    let generatedBlocks = [];
+    let requiredBlockCount = 5; // 作るブロックの数
+    let currentBuilderSize = 3; // 3または6
+    let builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
+
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
-        if(screenId === 'screen-game') initGame();
+        if(screenId === 'screen-builder') initBuilder();
+        else if(screenId === 'screen-game') initGame();
         else if(gameInterval) clearInterval(gameInterval);
     }
 
+    function submitName() {
+        const val = document.getElementById('player-name-input').value.trim();
+        if(!val.match(/^[ぁ-んー]{1,6}$/)) {
+            alert('ひらがな1〜6文字で入力してください');
+            return;
+        }
+        myName = val;
+        generatedBlocks = []; // リセット
+        showScreen('screen-builder');
+    }
+
+    // --- ブロック生成エディタ関連 ---
+    function initBuilder() {
+        currentBuilderSize = 3;
+        builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
+        renderBuilderGrid();
+    }
+
+    function toggleBuilderSize() {
+        currentBuilderSize = (currentBuilderSize === 3) ? 6 : 3;
+        document.getElementById('btn-toggle-size').innerText = `モード切替: ${currentBuilderSize === 3 ? '3×3' : '3×6'}`;
+        renderBuilderGrid();
+    }
+
+    function renderBuilderGrid() {
+        document.getElementById('builder-instruction').innerText = `ブロックを作ろう (${generatedBlocks.length + 1}/${requiredBlockCount}個目)`;
+        const container = document.getElementById('builder-canvas-container');
+        container.innerHTML = '';
+
+        const gridDiv = document.createElement('div');
+        gridDiv.className = currentBuilderSize === 3 ? 'grid-3x3' : 'grid-3x6';
+
+        const cols = currentBuilderSize;
+        const rows = 3;
+
+        for(let r=0; r<rows; r++) {
+            for(let c=0; c<cols; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell-box' + (builderGrid[r][c] === 1 ? ' active' : '');
+                let cr = r, cc = c;
+                cell.onclick = () => {
+                    builderGrid[cr][cc] = builderGrid[cr][cc] === 1 ? 0 : 1;
+                    renderBuilderGrid();
+                };
+                gridDiv.appendChild(cell);
+            }
+        }
+        container.appendChild(gridDiv);
+    }
+
+    function completeCurrentBlock() {
+        // 有効なマス（1）があるかチェック
+        let hasCell = false;
+        let trimmedGrid = [];
+        let minC = 6, maxC = -1, minR = 3, maxR = -1;
+
+        for(let r=0; r<3; r++) {
+            for(let c=0; c<currentBuilderSize; c++) {
+                if(builderGrid[r][c] === 1) {
+                    hasCell = true;
+                    if(c < minC) minC = c;
+                    if(c > maxC) maxC = c;
+                    if(r < minR) minR = r;
+                    if(r > maxR) maxR = r;
+                }
+            }
+        }
+
+        if(!hasCell) {
+            alert('1つ以上のマスをタップして形を作ってください');
+            return;
+        }
+
+        // 周りの余白をトリミングして形をキレイにする
+        let pieceMatrix = [];
+        for(let r = minR; r <= maxR; r++) {
+            let rowArr = [];
+            for(let c = minC; c <= maxC; c++) {
+                rowArr.push(builderGrid[r][c]);
+            }
+            pieceMatrix.push(rowArr);
+        }
+
+        generatedBlocks.push(pieceMatrix);
+        builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
+
+        if(generatedBlocks.length < requiredBlockCount) {
+            renderBuilderGrid(); // 次のブロック作成へ
+        } else {
+            showScreen('screen-mode'); // 全て作ったらモード選択へ
+        }
+    }
+
+    // --- メインゲーム関連 ---
     let canvas, ctx;
     let boardWidth = 10, boardHeight = 20, blockSize = 20;
     let board = [], score = 0, currentPiece = null;
@@ -101,11 +237,12 @@
     let currentMode = 'normal';
 
     function initGame() {
+        document.getElementById('hud-name').innerText = `名: ${myName}`;
         canvas = document.getElementById('game-canvas');
         ctx = canvas.getContext('2d');
         
         if(currentMode === 'normal') {
-            boardWidth = 10; boardHeight = 20; blockSize = 20;
+            boardWidth = 10; boardHeight = 20; blockSize = 19;
             document.getElementById('hud-info').innerText = 'スピードUP制';
         } else {
             boardWidth = 10; boardHeight = 10; blockSize = 26;
@@ -130,16 +267,14 @@
     }
 
     function spawnPiece() {
-        const shapes = [
-            [[1,1],[1,1]], // 四角
-            [[1,1,1,1]], // 棒
-            [[0,1,0],[1,1,1]], // T字
-            [[1,0,0],[1,1,1]]  // L字
-        ];
-        const shape = shapes[Math.floor(Math.random() * shapes.length)];
+        // ユーザーが作ったブロックからランダムに選択（作られていない場合はデフォルト四角）
+        const template = (generatedBlocks.length > 0) 
+            ? generatedBlocks[Math.floor(Math.random() * generatedBlocks.length)]
+            : [[1,1],[1,1]];
+
         currentPiece = {
-            matrix: shape,
-            x: Math.floor(boardWidth / 2) - Math.floor(shape[0].length / 2),
+            matrix: template,
+            x: Math.floor(boardWidth / 2) - Math.floor(template[0].length / 2),
             y: 0
         };
     }
@@ -153,7 +288,7 @@
             clearLines();
             spawnPiece();
             if(checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-                alert('ゲームオーバー！ スコア: ' + score + '点');
+                alert(`ゲーム終了！ ${myName}さんのスコア: ${score}点`);
                 clearInterval(gameInterval);
                 showScreen('screen-mode');
                 return;
@@ -201,7 +336,7 @@
             score += lines;
             document.getElementById('hud-score').innerText = `点: ${score}`;
             if(currentMode === 'speed' && score >= 30) {
-                alert('🏆 目標達成！YOU WIN!! 🎆');
+                alert(`🏆 目標達成！ ${myName}さん YOU WIN!! 🎆`);
                 clearInterval(gameInterval);
                 showScreen('screen-mode');
             }
@@ -235,6 +370,7 @@
         }
     }
 
+    // タッチ操作（スワイプ移動、タップ回転）
     let startX = 0;
     window.addEventListener('touchstart', e => { if(e.touches.length) startX = e.touches[0].clientX; });
     window.addEventListener('touchmove', e => {
