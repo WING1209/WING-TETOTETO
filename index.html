@@ -25,7 +25,16 @@
             background: #1a1a1a; padding: 20px; z-index: 10;
         }
         .screen.active { display: flex; }
-        h1 { color: #00ffff; font-size: 22px; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        h1 { color: #00ffff; font-size: 22px; text-align: center; margin-bottom: 10px; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        .version {
+            color: #00ff00;
+            font-size: 14px;
+            margin-bottom: 30px;
+            background: #222;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px dashed #00ff00;
+        }
         .blink {
             animation: blinkAnime 1s infinite;
             color: #ff00ff; cursor: pointer;
@@ -49,9 +58,10 @@
 <body>
 
 <div id="container">
-    <!-- ① タイトル画面 -->
+    <!-- ① タイトル画面 (Ver1.0表記を追加) -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
+        <div class="version">Ver 1.0 (更新確認用)</div>
         <div class="btn blink" onclick="showScreen('screen-mode')">- スタート -</div>
     </div>
 
@@ -202,7 +212,6 @@
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 固定されたブロック
         for(let r=0; r<boardHeight; r++) {
             for(let c=0; c<boardWidth; c++) {
                 if(board[r][c] !== 0) {
@@ -212,7 +221,6 @@
             }
         }
 
-        // 操作中のブロック
         if(currentPiece) {
             ctx.fillStyle = '#ff00ff';
             for(let r=0; r<currentPiece.matrix.length; r++) {
@@ -227,7 +235,6 @@
         }
     }
 
-    // スマホタッチ・PCクリック操作（左右スワイプで移動、タップで回転）
     let startX = 0;
     window.addEventListener('touchstart', e => { if(e.touches.length) startX = e.touches[0].clientX; });
     window.addEventListener('touchmove', e => {
