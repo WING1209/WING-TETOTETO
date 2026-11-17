@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WINGブロック崩し</title>
-    <!-- ネットワーク接続用 PeerJS CDN -->
+    <!-- PeerJS CDN -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        * { box-sizing: border-box; }
         body {
             margin: 0; padding: 0;
             background-color: #111; color: #fff;
             font-family: monospace;
             display: flex; justify-content: center; align-items: center;
-            height: 100vh; overflow: hidden; touch-action: none;
+            height: 100vh; overflow: hidden;
         }
         #container {
             width: 100%; max-width: 400px; height: 100%; max-height: 800px;
@@ -34,13 +34,12 @@
             color: #00ff00; font-size: 12px; margin-bottom: 20px;
             background: #222; padding: 3px 8px; border-radius: 4px; border: 1px dashed #00ff00;
         }
-        .blink {
-            animation: blinkAnime 1s infinite;
-            color: #ff00ff; cursor: pointer;
+        .btn {
+            background: #333; color: #ff00ff; border: 2px solid #ff00ff;
+            padding: 12px 20px; font-size: 16px; border-radius: 5px;
+            cursor: pointer; margin: 8px 0; width: 85%; max-width: 260px; text-align: center;
         }
-        @keyframes blinkAnime {
-            0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; }
-        }
+        .btn:active { background: #ff00ff; color: #000; }
         button, input, select {
             background: #333; color: #fff; border: 2px solid #00ffff;
             padding: 12px 20px; font-size: 16px; border-radius: 5px;
@@ -68,37 +67,31 @@
             padding: 10px; font-size: 14px; background: #222; border-bottom: 1px solid #444;
         }
         canvas { background: #000; display: block; }
-        #fireworks-canvas {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 100;
-        }
     </style>
 </head>
 <body>
 
 <div id="container">
-    <canvas id="fireworks-canvas"></canvas>
-
-    <!-- ① タイトル画面 (Ver 1.3) -->
+    <!-- ① タイトル画面 (Ver 1.4 安定版) -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 1.3 (結果発表・花火追加)</div>
-        <div class="btn blink" onclick="showScreen('screen-name')">- スタート -</div>
+        <div class="version">Ver 1.4 (安定軽量版)</div>
+        <div class="btn" onclick="showScreen('screen-name')">- スタート -</div>
     </div>
 
     <!-- ② 名前入力画面 -->
     <div id="screen-name" class="screen">
         <h1>プレイヤー名入力</h1>
-        <p style="font-size:13px; color:#aaa; text-align:center; margin-bottom:15px;">ひらがな6文字以内で入力してください</p>
+        <p style="font-size:13px; color:#aaa; text-align:center; margin-bottom:15px;">ひらがな6文字以内で入力</p>
         <input type="text" id="player-name-input" placeholder="例: やまだ" maxlength="6">
-        <button onclick="submitName()">決定してブロック作成へ</button>
+        <button onclick="submitName()">決定してブロック作成</button>
         <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">もどる</button>
     </div>
 
     <!-- ③ ブロック生成画面 -->
     <div id="screen-builder" class="screen">
         <h3 id="builder-instruction">ブロックを作ろう (1/5個目)</h3>
-        <p style="font-size:12px; color:#00ffff; margin:0;">マスをタップして形を作ります</p>
+        <p style="font-size:12px; color:#00ffff; margin:0;">マスをタップして形を作成</p>
         
         <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center; min-height:180px;"></div>
         
@@ -142,8 +135,8 @@
     <!-- ⑥ モード選択画面 -->
     <div id="screen-mode" class="screen">
         <h1>ゲームモード選択</h1>
-        <div class="btn" onclick="startGame('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦10×横20・スピードUP制)</span></div>
-        <div class="btn" onclick="startGame('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・30点先取)</span></div>
+        <button onclick="startGame('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦10×横20)</span></button>
+        <button onclick="startGame('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・30点先取)</span></button>
     </div>
 
     <!-- ⑦ ゲームプレイ画面 -->
@@ -159,10 +152,10 @@
         <button onclick="location.reload()" style="margin: 8px auto; width: 90%; padding: 6px; font-size:14px; border-color:#ff5555; color:#ff5555;">やめる</button>
     </div>
 
-    <!-- ⑧ 結果発表・ランキング画面 -->
+    <!-- ⑧ 結果発表画面 -->
     <div id="screen-result" class="screen">
         <h1 id="result-title">結果発表</h1>
-        <div id="result-list" style="width:90%; max-height:220px; overflow-y:auto; margin:15px 0; background:#222; border:1px solid #444; border-radius:5px; padding:10px; font-size:15px;"></div>
+        <div id="result-list" style="width:90%; max-height:220px; overflow-y:auto; margin:15px 0; background:#222; border:1px solid #444; border-radius:5px; padding:10px; font-size:15px; text-align:center;"></div>
         <button onclick="location.reload()" style="background:#005555; border-color:#00ffff;">タイトルに戻る</button>
     </div>
 </div>
@@ -252,7 +245,7 @@
         }
 
         if(!hasCell) {
-            alert('1つ以上のマスをタップして形を作ってください');
+            alert('1つ以上のマスをタップしてください');
             return;
         }
 
@@ -294,7 +287,7 @@
                 showScreen('screen-lobby');
             });
             peer.on('error', () => {
-                alert('ルーム作成エラー。別のキーで再試行してください。');
+                alert('ルーム作成エラー。再試行してください。');
             });
             peer.on('connection', (c) => {
                 connections.push(c);
@@ -306,7 +299,7 @@
                 });
             });
         } catch(e) {
-            alert('通信モジュールの初期化に失敗しました');
+            alert('通信モジュールの初期化エラー');
         }
     }
 
@@ -324,18 +317,18 @@
             peer.on('open', () => {
                 guestConnection = peer.connect('wing_block_' + roomKey);
                 guestConnection.on('open', () => {
-                    document.getElementById('key-display').innerText = `ルーム ${roomKey} に接続成功！`;
-                    document.getElementById('lobby-status').innerText = 'ホストの開始を待っています...';
+                    document.getElementById('key-display').innerText = `ルーム ${roomKey} 接続成功！`;
+                    document.getElementById('lobby-status').innerText = 'ホストの開始待ち...';
                     document.getElementById('btn-start-game').style.display = 'none';
                     guestConnection.send({ type: 'blocks', blocks: generatedBlocks });
                     showScreen('screen-lobby');
                 });
                 guestConnection.on('error', () => {
-                    alert('ルームに接続できませんでした。キーを確認してください。');
+                    alert('ルームに接続できませんでした。');
                 });
             });
         } catch(e) {
-            alert('接続処理でエラーが発生しました');
+            alert('接続処理エラー');
         }
     }
 
@@ -348,7 +341,7 @@
 
     // --- メインゲーム関連 ---
     let canvas, ctx;
-    let boardWidth = 10, boardHeight = 20, blockSize = 20;
+    let boardWidth = 10, boardHeight = 20, blockSize = 19;
     let board = [], score = 0, currentPiece = null;
     let gameInterval = null;
     let currentMode = 'normal';
@@ -460,50 +453,7 @@
         clearInterval(gameInterval);
         showScreen('screen-result');
         document.getElementById('result-title').innerText = statusText;
-        
-        let resultList = document.getElementById('result-list');
-        resultList.innerHTML = `<div style="padding:5px; border-bottom:1px solid #444;"><strong>1位: ${myName}</strong> - ${score}点</div>`;
-        
-        if(statusText.includes('WIN')) {
-            startFireworks();
-        }
-    }
-
-    function startFireworks() {
-        const fcanvas = document.getElementById('fireworks-canvas');
-        const fctx = fcanvas.getContext('2d');
-        fcanvas.width = window.innerWidth;
-        fcanvas.height = window.innerHeight;
-
-        let particles = [];
-        for(let i=0; i<60; i++) {
-            particles.push({
-                x: fcanvas.width / 2,
-                y: fcanvas.height / 2,
-                vx: (Math.random() - 0.5) * 8,
-                vy: (Math.random() - 0.5) * 8,
-                color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                alpha: 1
-            });
-        }
-
-        function animateFireworks() {
-            fctx.clearRect(0,0,fcanvas.width, fcanvas.height);
-            particles.forEach(p => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.alpha -= 0.02;
-                fctx.save();
-                fctx.globalAlpha = Math.max(0, p.alpha);
-                fctx.fillStyle = p.color;
-                fctx.beginPath();
-                fctx.arc(p.x, p.y, 4, 0, Math.PI*2);
-                fctx.fill();
-                fctx.restore();
-            });
-            requestAnimationFrame(animateFireworks);
-        }
-        animateFireworks();
+        document.getElementById('result-list').innerHTML = `<strong>${myName}</strong><br>スコア: ${score}点`;
     }
 
     function drawGame() {
@@ -533,6 +483,7 @@
         }
     }
 
+    // タッチ・クリック操作
     let startX = 0;
     window.addEventListener('touchstart', e => { if(e.touches.length) startX = e.touches[0].clientX; });
     window.addEventListener('touchmove', e => {
