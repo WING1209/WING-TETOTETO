@@ -66,7 +66,7 @@
             background: #ff00ff; border-color: #ff88ff; box-shadow: 0 0 10px #ff00ff;
         }
 
-        /* ゲームプレイ画面全体（上寄せ・見切れ防止＆大画面化） */
+        /* ゲームプレイ画面全体 */
         #screen-game {
             justify-content: flex-start;
             padding: 6px 8px 8px 8px;
@@ -208,14 +208,72 @@
             pointer-events: none;
         }
 
-        /* ドラッグ中の浮遊ブロック */
+        /* ドラッグ中の浮遊ブロック（指より少し上に表示） */
         #drag-ghost {
             position: fixed;
             pointer-events: none;
             z-index: 999;
             display: none;
             transform: translate(-50%, -50%);
-            filter: drop-shadow(0 0 8px rgba(255, 0, 255, 0.8));
+            filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.9));
+        }
+
+        /* WIN花火演出オーバーレイ */
+        #win-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 15, 0.88);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        #win-overlay.active {
+            display: flex;
+        }
+        #fireworks-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .win-banner {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 18px 24px;
+            background: rgba(20, 20, 35, 0.85);
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+        }
+        .win-player-name {
+            font-size: 22px;
+            color: #00ffff;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .win-title-text {
+            font-size: 40px;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 0 0 18px #ff00ff, 0 0 30px #ffd700;
+            letter-spacing: 3px;
+        }
+        #win-actions {
+            position: relative;
+            z-index: 2;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 22px;
+            width: 100%;
+        }
+        #win-actions.show {
+            display: flex;
         }
 
         .result-item {
@@ -226,6 +284,16 @@
         .note-text {
             font-size: 11px; color: #aaa; text-align: center; line-height: 1.4; margin: 4px 0;
         }
+        .assign-badge {
+            background: #2b1438;
+            border: 1px solid #ff00ff;
+            color: #ff99ff;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 999px;
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -234,7 +302,7 @@
     <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 2.0 (ドラッグ設置・個数指定・JSONBin連携)</div>
+        <div class="version">Ver 2.1 (指オフセット・勝利点＆花火WIN・共通ブロック)</div>
         <button onclick="showScreen('screen-name')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
     </div>
 
@@ -243,7 +311,7 @@
         <h1>プレイヤー名入力</h1>
         <p class="note-text">ひらがな6文字以内で入力してください</p>
         <input type="text" id="player-name-input" placeholder="例: やまだ" maxlength="6">
-        <button onclick="submitName()">次へ（作成個数・ルーム設定）</button>
+        <button onclick="submitName()">次へ（作成数・ルーム設定）</button>
         <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
@@ -251,17 +319,18 @@
     <div id="screen-room" class="screen">
         <h1>作成数＆ルーム設定</h1>
 
-        <label class="note-text">最初に作るブロックの種類数（合計）</label>
+        <label class="note-text">全員で合計何種類のブロックを作るか</label>
         <select id="total-block-count">
+            <option value="2">2種類</option>
             <option value="3">3種類</option>
             <option value="4">4種類</option>
-            <option value="5" selected>5種類</option>
-            <option value="6">6種類</option>
+            <option value="5">5種類</option>
+            <option value="6" selected>6種類</option>
             <option value="8">8種類</option>
             <option value="10">10種類</option>
         </select>
 
-        <label class="note-text">プレイ人数（複数人で作成数を振り分けます）</label>
+        <label class="note-text">プレイ人数（最低1個保証＋余りをランダム振り分け）</label>
         <select id="player-count">
             <option value="1">1名 (ソロプレイ)</option>
             <option value="2">2名</option>
@@ -291,10 +360,11 @@
 
     <!-- ④ ブロック生成画面 -->
     <div id="screen-builder" class="screen">
-        <h3 id="builder-instruction">ブロックを作ろう (1/5個目)</h3>
-        <p id="builder-subinfo" class="note-text" style="color:#00ffff;">マスをタップして好きな形を作成</p>
+        <div id="builder-assign-badge" class="assign-badge">あなたは2個作成してください</div>
+        <h3 id="builder-instruction">ブロックを作ろう (1/2個目)</h3>
+        <p id="builder-subinfo" class="note-text" style="color:#00ffff;">全プレイヤー共通ブロックとして使われます</p>
 
-        <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center; min-height:170px;"></div>
+        <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center; min-height:165px;"></div>
 
         <button onclick="toggleBuilderSize()" id="btn-toggle-size" style="background:#224; border-color:#88ff88; color:#88ff88; padding:8px 14px; font-size:13px;">モード切替: 3×3</button>
         <button onclick="completeCurrentBlock()" style="background:#005555; border-color:#00ffff;">このブロックで決定</button>
@@ -307,15 +377,25 @@
         <p id="connection-count" style="font-size:13px; color:#ccc;"></p>
         <p id="lobby-blocks-info" class="note-text" style="color:#ff88ff;"></p>
 
-        <button id="btn-start-game" onclick="proceedToModeSelect()" style="display:none; background:#00aa00; border-color:#00ff00; font-weight:bold;">モード選択へ進む</button>
+        <button id="btn-start-game" onclick="proceedToModeSelect()" style="display:none; background:#00aa00; border-color:#00ff00; font-weight:bold;">モード・勝利点選択へ</button>
         <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">最初に戻る</button>
     </div>
 
-    <!-- ⑥ モード選択画面 -->
+    <!-- ⑥ モード＆勝利条件選択画面 -->
     <div id="screen-mode" class="screen">
-        <h1>ゲームモード選択</h1>
+        <h1>モード＆勝利条件選択</h1>
+
+        <label class="note-text">何点でクリアにするか（勝利条件）</label>
+        <select id="win-target-score">
+            <option value="20">20点でクリア</option>
+            <option value="30" selected>30点でクリア</option>
+            <option value="50">50点でクリア</option>
+            <option value="80">80点でクリア</option>
+            <option value="100">100点でクリア</option>
+        </select>
+
         <button onclick="selectModeAndStart('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦20×横10・落下＆NEXT表示)</span></button>
-        <button onclick="selectModeAndStart('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・ドラッグ設置・30点先取)</span></button>
+        <button onclick="selectModeAndStart('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・指オフセット設置)</span></button>
     </div>
 
     <!-- ⑦ ゲームプレイ画面 -->
@@ -332,8 +412,9 @@
                         <strong id="hud-name" style="font-size:12px; color:#fff;">-</strong>
                     </div>
                     <div class="hud-box">
-                        <div style="font-size:10px; color:#aaa;">得点</div>
-                        <strong id="hud-score" style="font-size:16px; color:#ff00ff;">0点</strong>
+                        <div style="font-size:10px; color:#aaa;">得点 / 目標</div>
+                        <strong id="hud-score" style="font-size:15px; color:#ff00ff;">0点</strong>
+                        <div id="hud-target" style="font-size:10px; color:#ffd700;">目標: 30点</div>
                     </div>
                     <div class="hud-box">
                         <div style="font-size:10px; color:#aaa;">モード</div>
@@ -358,7 +439,7 @@
 
                     <!-- スピードモード用：案内 -->
                     <div id="speed-controls-note" class="hud-box" style="display:none; color:#ff88ff; font-size:10px; line-height:1.3;">
-                        下から選んで<br>ドラッグ設置<br>(回転不可)
+                        指より少し上に<br>浮かんで設置<br>(回転不可)
                     </div>
 
                     <button class="gui-btn" onclick="location.reload()" style="background:#440000; border-color:#ff5555; font-size:11px; padding:6px 3px; margin-top:auto;">やめる</button>
@@ -377,19 +458,33 @@
     <div id="screen-result" class="screen">
         <h1 id="result-title">結果発表</h1>
         <div id="result-list" style="width:90%; max-height:240px; overflow-y:auto; margin:14px 0; background:#222; border:1px solid #444; border-radius:5px; padding:10px; font-size:15px; text-align:center;"></div>
-        <button onclick="location.reload()" style="background:#005555; border-color:#00ffff;">タイトルに戻る</button>
+        <button onclick="rematchGame()" style="background:#006600; border-color:#00ff00;">再戦する</button>
+        <button onclick="location.reload()" style="background:#004444; border-color:#00ffff;">終了する</button>
     </div>
 </div>
 
-<!-- ドラッグ中表示用 -->
+<!-- ドラッグ中表示用（指の少し上に浮遊） -->
 <canvas id="drag-ghost"></canvas>
+
+<!-- 最速到達時のWIN＆花火パーティクル演出 -->
+<div id="win-overlay">
+    <canvas id="fireworks-canvas"></canvas>
+    <div class="win-banner">
+        <div id="win-player-name" class="win-player-name">プレイヤー</div>
+        <div class="win-title-text">WIN!!</div>
+    </div>
+    <div id="win-actions">
+        <button onclick="rematchGame()" style="background:#007700; border-color:#00ff00; font-weight:bold;">再戦する</button>
+        <button onclick="finishFromWin()" style="background:#441111; border-color:#ff5555;">終了する</button>
+    </div>
+</div>
 
 <script>
     let myName = "";
-    let totalBlockCount = 5;
-    let myAssignedBlockCount = 5;
+    let totalBlockCount = 6;
+    let myAssignedBlockCount = 3;
     let myBuiltBlocks = [];
-    let sharedBlocks = [];
+    let sharedBlocks = []; // 全プレイヤー共通ブロックプール
     let currentBuilderSize = 3;
     let builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
 
@@ -397,10 +492,15 @@
     let isHost = false;
     let roomKey = "";
     let maxPlayers = 1;
-    let playerIndex = 0; // 0:ホスト, 1..:ゲスト
+    let playerIndex = 0;
     let connections = [];
     let guestConnection = null;
     let remoteResults = {};
+
+    let winTargetScore = 30;
+    let gameFinished = false;
+    let fireworksAnimId = null;
+    let winActionTimer = null;
 
     // JSONBin.io 連携用設定
     let jsonbinKey = "";
@@ -447,11 +547,35 @@
         return null;
     }
 
-    // 合計作成数を人数に振り分ける
-    function calcAssignedCount(total, players, idx) {
-        const base = Math.floor(total / players);
-        const rem = total % players;
-        return base + (idx < rem ? 1 : 0);
+    // 最低1個を各プレイヤーに保証し、余りをランダムに振り分ける
+    function allocateBlockCounts(total, players) {
+        const counts = Array(players).fill(0);
+        if (players <= 0) return counts;
+
+        if (total >= players) {
+            // 全員に最低1個ずつ配布
+            for (let i = 0; i < players; i++) counts[i] = 1;
+            let remainder = total - players;
+            while (remainder > 0) {
+                const pick = Math.floor(Math.random() * players);
+                counts[pick]++;
+                remainder--;
+            }
+        } else {
+            // 合計数が人数未満の場合は先頭から1個ずつ配布
+            for (let i = 0; i < total; i++) counts[i] = 1;
+        }
+        return counts;
+    }
+
+    function broadcastToPeers(payload) {
+        if (isHost) {
+            connections.forEach(c => {
+                if (c.open) c.send(payload);
+            });
+        } else if (guestConnection && guestConnection.open) {
+            guestConnection.send(payload);
+        }
     }
 
     function showScreen(screenId) {
@@ -483,7 +607,8 @@
         maxPlayers = 1;
         playerIndex = 0;
         totalBlockCount = parseInt(document.getElementById('total-block-count').value, 10);
-        myAssignedBlockCount = totalBlockCount;
+        const alloc = allocateBlockCounts(totalBlockCount, 1);
+        myAssignedBlockCount = alloc[0];
         myBuiltBlocks = [];
         sharedBlocks = [];
         showScreen('screen-builder');
@@ -502,10 +627,12 @@
     }
 
     function renderBuilderGrid() {
+        document.getElementById('builder-assign-badge').innerText =
+            `あなたは${myAssignedBlockCount}個作成してください`;
         document.getElementById('builder-instruction').innerText =
             `ブロックを作ろう (${myBuiltBlocks.length + 1}/${myAssignedBlockCount}個目)`;
         document.getElementById('builder-subinfo').innerText =
-            `合計${totalBlockCount}種類中・あなたの担当: ${myAssignedBlockCount}個`;
+            `合計${totalBlockCount}種類を全プレイヤーで共通使用します`;
 
         const container = document.getElementById('builder-canvas-container');
         container.innerHTML = '';
@@ -559,13 +686,14 @@
         }
 
         myBuiltBlocks.push(pieceMatrix);
-        sharedBlocks.push(pieceMatrix);
+        if (!sharedBlocks.some(b => JSON.stringify(b) === JSON.stringify(pieceMatrix))) {
+            sharedBlocks.push(pieceMatrix);
+        }
         builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
 
         if (myBuiltBlocks.length < myAssignedBlockCount) {
             renderBuilderGrid();
         } else {
-            // 自分の担当分が完成
             if (maxPlayers === 1 && !peer) {
                 showScreen('screen-mode');
             } else if (isHost) {
@@ -576,7 +704,8 @@
                 guestConnection.send({ type: 'blocks', name: myName, blocks: myBuiltBlocks });
                 await syncToJsonBin({ roomKey, player: myName, blocks: myBuiltBlocks });
                 document.getElementById('lobby-status').innerText = '作成完了！ホストの開始待ち...';
-                document.getElementById('lobby-blocks-info').innerText = `あなたの作成ブロック: ${myBuiltBlocks.length}個送信済み`;
+                document.getElementById('lobby-blocks-info').innerText =
+                    `共通ブロックプール: ${sharedBlocks.length}個（あなた作成: ${myBuiltBlocks.length}個）`;
                 showScreen('screen-lobby');
             }
         }
@@ -589,23 +718,29 @@
     function updateLobbyDisplay() {
         document.getElementById('key-display').innerText = `ルームキー: ${roomKey}`;
         document.getElementById('lobby-status').innerText = 'ホスト: 参加待ち...';
-        document.getElementById('connection-count').innerText = `接続: ${connections.length + 1} / ${maxPlayers}名（全${totalBlockCount}種）`;
-        document.getElementById('lobby-blocks-info').innerText = `現在の共有ブロック数: ${sharedBlocks.length}個`;
+        document.getElementById('connection-count').innerText =
+            `接続: ${connections.length + 1} / ${maxPlayers}名（共通目標: ${totalBlockCount}種）`;
+        document.getElementById('lobby-blocks-info').innerText =
+            `現在の共通ブロック数: ${sharedBlocks.length}個`;
         document.getElementById('btn-start-game').style.display = 'block';
     }
 
     function handlePeerMessage(data, senderConn) {
         if (!data || !data.type) return;
         if (data.type === 'room_config') {
-            totalBlockCount = data.totalBlockCount || 5;
+            totalBlockCount = data.totalBlockCount || 6;
             maxPlayers = data.maxPlayers || 2;
             playerIndex = data.playerIndex || 1;
-            myAssignedBlockCount = calcAssignedCount(totalBlockCount, maxPlayers, playerIndex);
+            myAssignedBlockCount = data.assignedCount ?? 1;
             myBuiltBlocks = [];
             sharedBlocks = [];
             showScreen('screen-builder');
         } else if (data.type === 'blocks' && Array.isArray(data.blocks)) {
-            sharedBlocks.push(...data.blocks);
+            data.blocks.forEach(blk => {
+                if (!sharedBlocks.some(existing => JSON.stringify(existing) === JSON.stringify(blk))) {
+                    sharedBlocks.push(blk);
+                }
+            });
             if (isHost) {
                 updateLobbyDisplay();
                 connections.forEach(c => {
@@ -614,12 +749,21 @@
             }
         } else if (data.type === 'sync_blocks' && Array.isArray(data.blocks)) {
             sharedBlocks = data.blocks;
-            document.getElementById('lobby-blocks-info').innerText = `現在の共有ブロック数: ${sharedBlocks.length}個`;
+            document.getElementById('lobby-blocks-info').innerText =
+                `現在の共通ブロック数: ${sharedBlocks.length}個`;
         } else if (data.type === 'start_mode') {
             showScreen('screen-mode');
         } else if (data.type === 'start_game') {
             currentMode = data.mode || 'normal';
+            winTargetScore = data.winTargetScore || 30;
             showScreen('screen-game');
+        } else if (data.type === 'first_win') {
+            triggerWinCelebration(data.winnerName, data.score, false);
+            if (isHost) {
+                connections.forEach(c => {
+                    if (c !== senderConn && c.open) c.send(data);
+                });
+            }
         } else if (data.type === 'result') {
             remoteResults[data.name] = { score: data.score, status: data.status };
             if (isHost) {
@@ -628,6 +772,11 @@
                 });
             }
             renderResultList();
+        } else if (data.type === 'rematch') {
+            currentMode = data.mode || currentMode;
+            winTargetScore = data.winTargetScore || winTargetScore;
+            hideWinCelebration();
+            showScreen('screen-game');
         }
     }
 
@@ -637,8 +786,9 @@
         remoteResults = {};
         totalBlockCount = parseInt(document.getElementById('total-block-count').value, 10);
         maxPlayers = parseInt(document.getElementById('player-count').value, 10);
+        const allocations = allocateBlockCounts(totalBlockCount, maxPlayers);
         playerIndex = 0;
-        myAssignedBlockCount = calcAssignedCount(totalBlockCount, maxPlayers, 0);
+        myAssignedBlockCount = allocations[0];
         myBuiltBlocks = [];
         sharedBlocks = [];
         roomKey = Math.floor(1000 + Math.random() * 9000).toString();
@@ -666,13 +816,15 @@
                     return;
                 }
                 const assignedIdx = connections.length + 1;
+                const guestCount = allocations[assignedIdx] ?? 1;
                 connections.push(c);
                 c.on('open', () => {
                     c.send({
                         type: 'room_config',
                         totalBlockCount,
                         maxPlayers,
-                        playerIndex: assignedIdx
+                        playerIndex: assignedIdx,
+                        assignedCount: guestCount
                     });
                 });
                 updateLobbyDisplay();
@@ -732,13 +884,8 @@
 
     function selectModeAndStart(mode) {
         currentMode = mode;
-        if (isHost) {
-            connections.forEach(c => {
-                if (c.open) c.send({ type: 'start_game', mode });
-            });
-        } else if (guestConnection && guestConnection.open) {
-            guestConnection.send({ type: 'start_game', mode });
-        }
+        winTargetScore = parseInt(document.getElementById('win-target-score').value, 10) || 30;
+        broadcastToPeers({ type: 'start_game', mode, winTargetScore });
         showScreen('screen-game');
     }
 
@@ -758,7 +905,8 @@
         return { matrix: result, angle };
     }
 
-    function getActiveBlockPool() {
+    // ノーマル・スピード共通のブロックプール
+    function getCommonBlockPool() {
         if (sharedBlocks.length > 0) return sharedBlocks;
         if (myBuiltBlocks.length > 0) return myBuiltBlocks;
         return [
@@ -777,13 +925,19 @@
     let currentIntervalMs = 750;
     let currentMode = 'normal';
 
-    // スピードモード用：待機所（4枠）＆ドラッグ状態
+    // スピードモード用：待機所（4枠）＆指オフセットドラッグ状態
     let dockPieces = [null, null, null, null];
     let draggingDockIndex = -1;
     let dragMatrix = null;
+    // 指より少し上に浮かせるオフセット（px）
+    const FINGER_LIFT_OFFSET = 58;
 
     function initGame() {
+        gameFinished = false;
+        hideWinCelebration();
+
         document.getElementById('hud-name').innerText = myName || 'プレイヤー';
+        document.getElementById('hud-target').innerText = `目標: ${winTargetScore}点`;
         canvas = document.getElementById('game-canvas');
         ctx = canvas.getContext('2d');
         nextCanvas = document.getElementById('next-canvas');
@@ -794,7 +948,6 @@
         const normalControls = document.getElementById('normal-controls');
         const speedNote = document.getElementById('speed-controls-note');
 
-        // 画面高さに合わせてブロックサイズを自動計算（見切れ防止＆大きめ表示）
         const containerHeight = document.getElementById('container').clientHeight || 700;
         const containerWidth = document.getElementById('container').clientWidth || 390;
         const availableWidth = Math.max(180, containerWidth - 150);
@@ -819,7 +972,7 @@
             const maxByWidth = Math.floor(availableWidth / boardWidth);
             blockSize = Math.max(20, Math.min(34, maxByHeight, maxByWidth));
 
-            document.getElementById('hud-info').innerText = 'スピード(目標30点)';
+            document.getElementById('hud-info').innerText = 'スピード(設置)';
             dockArea.classList.add('active');
             nextBox.style.display = 'none';
             normalControls.style.display = 'none';
@@ -839,7 +992,7 @@
         }
 
         if (currentMode === 'normal') {
-            nextPiece = createRandomNormalPiece();
+            nextPiece = createRandomCommonPiece();
             spawnNormalPiece();
             drawGame();
             drawNextPiece();
@@ -850,15 +1003,15 @@
         }
     }
 
-    function createRandomNormalPiece() {
-        const pool = getActiveBlockPool();
+    function createRandomCommonPiece() {
+        const pool = getCommonBlockPool();
         const template = pool[Math.floor(Math.random() * pool.length)];
         return template.map(row => [...row]);
     }
 
     function spawnNormalPiece() {
-        const matrix = nextPiece || createRandomNormalPiece();
-        nextPiece = createRandomNormalPiece();
+        const matrix = nextPiece || createRandomCommonPiece();
+        nextPiece = createRandomCommonPiece();
         currentPiece = {
             matrix,
             x: Math.floor(boardWidth / 2) - Math.floor(matrix[0].length / 2),
@@ -895,12 +1048,13 @@
     }
 
     function updateNormalGame() {
-        if (currentMode !== 'normal' || !currentPiece) return;
+        if (gameFinished || currentMode !== 'normal' || !currentPiece) return;
         currentPiece.y++;
         if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
             currentPiece.y--;
             mergeMatrix(currentPiece.x, currentPiece.y, currentPiece.matrix);
             clearLines();
+            if (gameFinished) return;
             spawnNormalPiece();
             if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
                 endGame('ゲームオーバー');
@@ -911,7 +1065,7 @@
     }
 
     function movePiece(dir) {
-        if (currentMode !== 'normal' || !currentPiece) return;
+        if (gameFinished || currentMode !== 'normal' || !currentPiece) return;
         const nx = currentPiece.x + dir;
         if (!checkCollision(nx, currentPiece.y, currentPiece.matrix)) {
             currentPiece.x = nx;
@@ -920,12 +1074,13 @@
     }
 
     function hardDrop() {
-        if (currentMode !== 'normal' || !currentPiece) return;
+        if (gameFinished || currentMode !== 'normal' || !currentPiece) return;
         while (!checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.matrix)) {
             currentPiece.y++;
         }
         mergeMatrix(currentPiece.x, currentPiece.y, currentPiece.matrix);
         clearLines();
+        if (gameFinished) return;
         spawnNormalPiece();
         if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
             endGame('ゲームオーバー');
@@ -935,7 +1090,7 @@
     }
 
     function rotatePiece() {
-        if (currentMode !== 'normal' || !currentPiece) return;
+        if (gameFinished || currentMode !== 'normal' || !currentPiece) return;
         const rot = rotateMatrix90(currentPiece.matrix);
         if (!checkCollision(currentPiece.x, currentPiece.y, rot)) {
             currentPiece.matrix = rot;
@@ -943,9 +1098,9 @@
         }
     }
 
-    // --- スピードモード：待機所＆ドラッグ設置 ---
+    // --- スピードモード：待機所＆指オフセットドラッグ ---
     function createDockItem() {
-        const pool = getActiveBlockPool();
+        const pool = getCommonBlockPool();
         const raw = pool[Math.floor(Math.random() * pool.length)];
         const rotated = applyRandomAngle(raw);
         return {
@@ -987,13 +1142,20 @@
                 slot.appendChild(pCanvas);
 
                 slot.addEventListener('touchstart', (e) => {
-                    if (currentMode !== 'speed' || !e.touches.length) return;
+                    if (gameFinished || currentMode !== 'speed' || !e.touches.length) return;
                     e.preventDefault();
                     startDraggingFromDock(idx, e.touches[0].clientX, e.touches[0].clientY);
                 }, { passive: false });
             }
             slotsWrap.appendChild(slot);
         });
+    }
+
+    function getVisualAnchor(clientX, clientY) {
+        return {
+            x: clientX,
+            y: clientY - FINGER_LIFT_OFFSET
+        };
     }
 
     function startDraggingFromDock(idx, clientX, clientY) {
@@ -1010,7 +1172,7 @@
         ghost.width = cols * blockSize;
         ghost.height = rows * blockSize;
         gCtx.clearRect(0, 0, ghost.width, ghost.height);
-        gCtx.fillStyle = 'rgba(255, 0, 255, 0.85)';
+        gCtx.fillStyle = 'rgba(255, 0, 255, 0.9)';
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 if (dragMatrix[r][c] === 1) {
@@ -1018,16 +1180,21 @@
                 }
             }
         }
+        const anchor = getVisualAnchor(clientX, clientY);
         ghost.style.display = 'block';
-        ghost.style.left = clientX + 'px';
-        ghost.style.top = clientY + 'px';
+        ghost.style.left = anchor.x + 'px';
+        ghost.style.top = anchor.y + 'px';
+
+        const pos = clientToBoardCell(clientX, clientY, dragMatrix);
+        drawGame(pos);
     }
 
     function moveDragGhost(clientX, clientY) {
         if (draggingDockIndex < 0 || !dragMatrix) return;
+        const anchor = getVisualAnchor(clientX, clientY);
         const ghost = document.getElementById('drag-ghost');
-        ghost.style.left = clientX + 'px';
-        ghost.style.top = clientY + 'px';
+        ghost.style.left = anchor.x + 'px';
+        ghost.style.top = anchor.y + 'px';
 
         const pos = clientToBoardCell(clientX, clientY, dragMatrix);
         drawGame(pos);
@@ -1035,11 +1202,12 @@
 
     function clientToBoardCell(clientX, clientY, matrix) {
         if (!canvas) return null;
+        const anchor = getVisualAnchor(clientX, clientY);
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
-        const bx = (clientX - rect.left) * scaleX;
-        const by = (clientY - rect.top) * scaleY;
+        const bx = (anchor.x - rect.left) * scaleX;
+        const by = (anchor.y - rect.top) * scaleY;
 
         const cols = matrix[0].length;
         const rows = matrix.length;
@@ -1059,6 +1227,11 @@
             mergeMatrix(pos.x, pos.y, dragMatrix);
             dockPieces[draggingDockIndex] = createDockItem();
             clearLines();
+            if (gameFinished) {
+                draggingDockIndex = -1;
+                dragMatrix = null;
+                return;
+            }
             if (!hasAnyPlaceableDockPiece()) {
                 endGame('ゲームオーバー');
                 draggingDockIndex = -1;
@@ -1126,14 +1299,136 @@
         if (lines > 0) {
             score += lines * 10;
             document.getElementById('hud-score').innerText = `${score}点`;
-            if (currentMode === 'speed' && score >= 30) {
-                endGame('🏆 YOU WIN!!');
+
+            if (score >= winTargetScore) {
+                const winnerName = myName || 'プレイヤー';
+                broadcastToPeers({ type: 'first_win', winnerName, score });
+                triggerWinCelebration(winnerName, score, true);
                 return;
             }
+
             if (currentMode === 'normal') {
                 resetGameInterval(750 - score * 12);
             }
         }
+    }
+
+    // --- 最速到達時：花火パーティクル＆WIN演出 ---
+    function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
+        if (gameFinished) return;
+        gameFinished = true;
+
+        if (gameInterval) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+        }
+        document.getElementById('drag-ghost').style.display = 'none';
+        draggingDockIndex = -1;
+        dragMatrix = null;
+
+        const overlay = document.getElementById('win-overlay');
+        const actions = document.getElementById('win-actions');
+        document.getElementById('win-player-name').innerText = `${winnerName} (${winnerScore}点)`;
+        actions.classList.remove('show');
+        overlay.classList.add('active');
+
+        startFireworks();
+
+        remoteResults[winnerName] = { score: winnerScore, status: '🏆 WIN!!' };
+        if (isLocalWinner) {
+            const payload = { type: 'result', name: myName || 'プレイヤー', score, status: '🏆 WIN!!' };
+            broadcastToPeers(payload);
+            syncToJsonBin({ roomKey, winner: payload, allResults: remoteResults });
+        }
+
+        if (winActionTimer) clearTimeout(winActionTimer);
+        winActionTimer = setTimeout(() => {
+            actions.classList.add('show');
+        }, 2200);
+    }
+
+    function hideWinCelebration() {
+        document.getElementById('win-overlay').classList.remove('active');
+        document.getElementById('win-actions').classList.remove('show');
+        if (winActionTimer) {
+            clearTimeout(winActionTimer);
+            winActionTimer = null;
+        }
+        if (fireworksAnimId) {
+            cancelAnimationFrame(fireworksAnimId);
+            fireworksAnimId = null;
+        }
+    }
+
+    function startFireworks() {
+        const fwCanvas = document.getElementById('fireworks-canvas');
+        const fwCtx = fwCanvas.getContext('2d');
+        fwCanvas.width = window.innerWidth;
+        fwCanvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#ff00ff', '#00ffff', '#ffd700', '#00ff88', '#ff5555', '#ffffff'];
+
+        function spawnBurst() {
+            const cx = Math.random() * fwCanvas.width * 0.8 + fwCanvas.width * 0.1;
+            const cy = Math.random() * fwCanvas.height * 0.45 + fwCanvas.height * 0.1;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            for (let i = 0; i < 36; i++) {
+                const angle = (Math.PI * 2 * i) / 36;
+                const speed = 1.8 + Math.random() * 3.8;
+                particles.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    alpha: 1,
+                    color
+                });
+            }
+        }
+
+        spawnBurst();
+        spawnBurst();
+        let tick = 0;
+
+        function loop() {
+            fwCtx.fillStyle = 'rgba(10, 10, 20, 0.22)';
+            fwCtx.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+            tick++;
+            if (tick % 26 === 0) spawnBurst();
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.05;
+                p.alpha -= 0.015;
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                fwCtx.globalAlpha = Math.max(0, p.alpha);
+                fwCtx.fillStyle = p.color;
+                fwCtx.beginPath();
+                fwCtx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                fwCtx.fill();
+            }
+            fwCtx.globalAlpha = 1;
+            fireworksAnimId = requestAnimationFrame(loop);
+        }
+        loop();
+    }
+
+    function rematchGame() {
+        hideWinCelebration();
+        broadcastToPeers({ type: 'rematch', mode: currentMode, winTargetScore });
+        showScreen('screen-game');
+    }
+
+    function finishFromWin() {
+        hideWinCelebration();
+        location.reload();
     }
 
     function renderResultList() {
@@ -1150,6 +1445,9 @@
     }
 
     async function endGame(statusText) {
+        if (gameFinished) return;
+        gameFinished = true;
+
         if (gameInterval) {
             clearInterval(gameInterval);
             gameInterval = null;
@@ -1162,13 +1460,7 @@
         remoteResults[playerLabel] = { score, status: statusText };
 
         const payload = { type: 'result', name: playerLabel, score, status: statusText };
-        if (isHost) {
-            connections.forEach(c => {
-                if (c.open) c.send(payload);
-            });
-        } else if (guestConnection && guestConnection.open) {
-            guestConnection.send(payload);
-        }
+        broadcastToPeers(payload);
         await syncToJsonBin({ roomKey, result: payload, allResults: remoteResults });
 
         showScreen('screen-result');
@@ -1181,7 +1473,6 @@
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 薄いグリッド線
         ctx.strokeStyle = '#181818';
         ctx.lineWidth = 1;
         for (let r = 0; r <= boardHeight; r++) {
@@ -1197,7 +1488,6 @@
             ctx.stroke();
         }
 
-        // 設置済みブロック
         for (let r = 0; r < boardHeight; r++) {
             for (let c = 0; c < boardWidth; c++) {
                 if (board[r][c] !== 0) {
@@ -1207,7 +1497,6 @@
             }
         }
 
-        // ノーマルモードの落下ブロック
         if (currentMode === 'normal' && currentPiece) {
             ctx.fillStyle = '#ff00ff';
             for (let r = 0; r < currentPiece.matrix.length; r++) {
@@ -1221,10 +1510,9 @@
             }
         }
 
-        // スピードモードのドラッグ中プレビュー
         if (currentMode === 'speed' && dragMatrix && ghostPos) {
             const valid = !checkCollision(ghostPos.x, ghostPos.y, dragMatrix);
-            ctx.fillStyle = valid ? 'rgba(0, 255, 136, 0.45)' : 'rgba(255, 60, 60, 0.45)';
+            ctx.fillStyle = valid ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 60, 60, 0.5)';
             for (let r = 0; r < dragMatrix.length; r++) {
                 for (let c = 0; c < dragMatrix[0].length; c++) {
                     if (dragMatrix[r][c] === 1) {
@@ -1237,17 +1525,16 @@
         }
     }
 
-    // グローバルタッチ操作（スピードモードのドラッグ＆ノーマルモードの横スワイプ）
     let startX = 0;
     window.addEventListener('touchstart', e => {
-        if (!document.getElementById('screen-game').classList.contains('active')) return;
+        if (gameFinished || !document.getElementById('screen-game').classList.contains('active')) return;
         if (currentMode === 'normal' && e.touches.length) {
             startX = e.touches[0].clientX;
         }
     }, { passive: true });
 
     window.addEventListener('touchmove', e => {
-        if (!document.getElementById('screen-game').classList.contains('active')) return;
+        if (gameFinished || !document.getElementById('screen-game').classList.contains('active')) return;
         if (!e.touches.length) return;
         const t = e.touches[0];
 
