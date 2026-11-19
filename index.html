@@ -463,16 +463,16 @@
             align-items: center;
         }
         #sequential-announcement {
-            min-height: 46px;
-            font-size: 18px;
+            min-height: 40px;
+            font-size: 17px;
             font-weight: bold;
             color: #ffd700;
             text-align: center;
-            margin: 8px 0;
+            margin: 6px 0;
             text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
         .result-item {
-            padding: 8px 10px;
+            padding: 7px 10px;
             border-bottom: 1px solid #333;
             display: flex;
             justify-content: center;
@@ -502,6 +502,66 @@
             border-radius: 999px;
             margin: 4px 0;
         }
+
+        /* 共通スコアボード（上位10件・ランクイン登録） */
+        .rankin-entry-box {
+            width: 92%;
+            max-width: 340px;
+            background: rgba(28, 18, 42, 0.94);
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .rankin-entry-box.active {
+            display: flex;
+        }
+        .scoreboard-list {
+            width: 94%;
+            max-width: 380px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: #14141c;
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 8px 0;
+        }
+        .sb-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 8px;
+            border-bottom: 1px solid #292938;
+            font-size: 13px;
+        }
+        .sb-row:last-child { border-bottom: none; }
+        .sb-row.top1 { color: #ffd700; font-weight: bold; }
+        .sb-row.top3 { color: #00ffff; }
+        .jsonbin-config-box {
+            width: 94%;
+            max-width: 380px;
+            background: #191924;
+            border: 1px dashed #666;
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .jsonbin-config-box input {
+            width: 96%;
+            max-width: 340px;
+            padding: 7px 10px;
+            font-size: 12px;
+            margin: 2px 0;
+        }
     </style>
 </head>
 <body>
@@ -510,8 +570,9 @@
     <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 2.7 (自動判別＆降参・リタイア待機・50点加速)</div>
+        <div class="version">Ver 2.8 (50点刻み加速・JSONBin共通スコアボード)</div>
         <button onclick="showScreen('screen-play-type')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
+        <button onclick="openScoreboardScreen('screen-title')" style="background:#152836; border-color:#00ffff; color:#00ffff;">🏆 共通スコアボード（上位10）</button>
     </div>
 
     <!-- ①-B シングルプレイ／マルチプレイ選択画面 -->
@@ -589,7 +650,7 @@
 
             <label class="note-text">ゲームモード</label>
             <select id="game-mode-select">
-                <option value="normal">ノーマルモード（全員終了まで対戦・50点で高速化）</option>
+                <option value="normal">ノーマルモード（50点ごとに落下速度UP）</option>
                 <option value="speed">スピードモード（縦横揃えて消去・設定点先取）</option>
                 <option id="opt-score-challenge" value="challenge" style="display:none;">スコアチャレンジ（1人用・配置不可まで高得点）</option>
             </select>
@@ -625,7 +686,6 @@
     <!-- ⑨ ゲームプレイ画面 -->
     <div id="screen-game" class="screen">
         <div id="game-main-area">
-            <!-- 画面上部：降参ボタン＆状態表示 -->
             <div class="top-action-strip">
                 <button type="button" id="surrender-btn" onclick="handleSurrenderTap()">降参</button>
                 <div id="top-status-banner"></div>
@@ -685,7 +745,18 @@
         <div class="result-content">
             <h1 id="result-title">結果発表</h1>
             <div id="sequential-announcement"></div>
-            <div id="result-list" style="width:92%; max-height:220px; overflow-y:auto; margin:8px 0 12px 0; background:rgba(24,24,32,0.92); border:1px solid #555; border-radius:6px; padding:8px; font-size:14px; text-align:center;"></div>
+            <div id="result-list" style="width:92%; max-height:170px; overflow-y:auto; margin:6px 0 8px 0; background:rgba(24,24,32,0.92); border:1px solid #555; border-radius:6px; padding:6px; font-size:13px; text-align:center;"></div>
+
+            <!-- 上位10位ランクイン時の自由名前入力＆登録 -->
+            <div id="rankin-entry-box" class="rankin-entry-box">
+                <div id="rankin-message" style="font-size:13px; font-weight:bold; color:#ffd700;">🎉 共通スコアボード 上位10位ランクイン！</div>
+                <p class="note-text" style="color:#ddd;">ランキングに載せる名前を自由に再入力できます</p>
+                <input type="text" id="rankin-free-name-input" placeholder="自由入力（例: WINGマスター）" maxlength="16" style="width:94%; margin:2px 0; padding:8px 10px; font-size:13px;">
+                <button id="btn-submit-scoreboard" onclick="submitScoreToGlobalBoard()" style="width:94%; background:#006666; border-color:#00ffff; font-weight:bold; padding:8px 12px; font-size:13px; margin:2px 0;">共通スコアボードに登録</button>
+                <div id="rankin-submit-status" class="note-text" style="color:#00ff88;"></div>
+            </div>
+
+            <button onclick="openScoreboardScreen('screen-result')" style="background:#1a293a; border-color:#00ffff; padding:9px 14px; font-size:13px;">🏆 共通スコアボードを見る</button>
 
             <div id="host-result-actions" style="display:none; width:100%; flex-direction:column; align-items:center;">
                 <button onclick="hostChooseRematch()" style="background:#006600; border-color:#00ff00; font-weight:bold;">再戦</button>
@@ -697,6 +768,24 @@
                 <button id="btn-guest-rematch-ready" class="lit-btn" style="display:none;" onclick="guestTapRematchReady()">レディー</button>
             </div>
         </div>
+    </div>
+
+    <!-- ⑪ 共通スコアボード画面（上位10件） -->
+    <div id="screen-scoreboard" class="screen">
+        <h1>🏆 共通スコアボード（上位10）</h1>
+        <p id="scoreboard-source-note" class="note-text" style="color:#00ff88;"></p>
+
+        <div id="scoreboard-list" class="scoreboard-list"></div>
+
+        <button onclick="refreshScoreboardView()" style="background:#004444; border-color:#00ffff; padding:9px 14px; font-size:13px;">更新する</button>
+
+        <div class="jsonbin-config-box">
+            <div style="font-size:11px; color:#ffd700; font-weight:bold;">JSONBin 連携設定（任意・未設定時はローカル保存）</div>
+            <input type="text" id="cfg-jsonbin-id" placeholder="JSONBin BIN ID（例: 67abc123...）" onchange="saveJsonBinConfigFromInputs()">
+            <input type="password" id="cfg-jsonbin-key" placeholder="JSONBin X-Master-Key" onchange="saveJsonBinConfigFromInputs()">
+        </div>
+
+        <button onclick="closeScoreboardScreen()" style="border-color:#ff5555; color:#ff5555; margin-top:10px;">もどる</button>
     </div>
 </div>
 
@@ -745,6 +834,200 @@
 </div>
 
 <script>
+    // --- JSONBin 設定（必要なら直接書き換えるか、スコアボード画面から入力可能） ---
+    const DEFAULT_JSONBIN_ID = "";
+    const DEFAULT_JSONBIN_MASTER_KEY = "";
+    const LOCAL_SCOREBOARD_KEY = "wing_block_local_scoreboard_v1";
+    const JSONBIN_CFG_STORAGE_KEY = "wing_block_jsonbin_cfg_v1";
+
+    function getJsonBinConfig() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(JSONBIN_CFG_STORAGE_KEY) || "{}");
+            return {
+                binId: (saved.binId || DEFAULT_JSONBIN_ID || "").trim(),
+                masterKey: (saved.masterKey || DEFAULT_JSONBIN_MASTER_KEY || "").trim()
+            };
+        } catch (e) {
+            return { binId: DEFAULT_JSONBIN_ID, masterKey: DEFAULT_JSONBIN_MASTER_KEY };
+        }
+    }
+
+    function syncJsonBinConfigInputs() {
+        const cfg = getJsonBinConfig();
+        const idEl = document.getElementById('cfg-jsonbin-id');
+        const keyEl = document.getElementById('cfg-jsonbin-key');
+        if (idEl) idEl.value = cfg.binId;
+        if (keyEl) keyEl.value = cfg.masterKey;
+    }
+
+    function saveJsonBinConfigFromInputs() {
+        const binId = (document.getElementById('cfg-jsonbin-id')?.value || "").trim();
+        const masterKey = (document.getElementById('cfg-jsonbin-key')?.value || "").trim();
+        localStorage.setItem(JSONBIN_CFG_STORAGE_KEY, JSON.stringify({ binId, masterKey }));
+        refreshScoreboardView();
+    }
+
+    function loadLocalScores() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(LOCAL_SCOREBOARD_KEY) || "[]");
+            return Array.isArray(raw) ? raw : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveLocalScores(list) {
+        localStorage.setItem(LOCAL_SCOREBOARD_KEY, JSON.stringify(list.slice(0, 10)));
+    }
+
+    async function fetchGlobalScores() {
+        const cfg = getJsonBinConfig();
+        if (!cfg.binId || !cfg.masterKey) {
+            return { scores: loadLocalScores(), source: "ローカル保存（JSONBin未設定）" };
+        }
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${encodeURIComponent(cfg.binId)}/latest`, {
+                headers: {
+                    "X-Master-Key": cfg.masterKey,
+                    "X-Bin-Meta": "false"
+                }
+            });
+            if (!res.ok) throw new Error("fetch failed");
+            const json = await res.json();
+            const list = Array.isArray(json) ? json : (Array.isArray(json.scores) ? json.scores : []);
+            const sortedTop10 = normalizeTop10Scores(list);
+            saveLocalScores(sortedTop10);
+            return { scores: sortedTop10, source: "JSONBin 共通ランキング" };
+        } catch (e) {
+            return { scores: loadLocalScores(), source: "ローカル保存（JSONBin通信エラー）" };
+        }
+    }
+
+    async function saveGlobalScores(list) {
+        const top10 = normalizeTop10Scores(list);
+        saveLocalScores(top10);
+        const cfg = getJsonBinConfig();
+        if (!cfg.binId || !cfg.masterKey) {
+            return { ok: true, source: "ローカル保存" };
+        }
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${encodeURIComponent(cfg.binId)}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": cfg.masterKey
+                },
+                body: JSON.stringify({ scores: top10 })
+            });
+            if (!res.ok) throw new Error("put failed");
+            return { ok: true, source: "JSONBin 共通スコアボード" };
+        } catch (e) {
+            return { ok: false, source: "ローカル保存（JSONBin更新失敗）" };
+        }
+    }
+
+    function normalizeTop10Scores(list) {
+        return [...(list || [])]
+            .filter(item => item && typeof item.score === "number")
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 10);
+    }
+
+    let previousScreenBeforeScoreboard = "screen-title";
+    let myLatestFinishScore = 0;
+    let rankinSubmittedThisRound = false;
+
+    async function openScoreboardScreen(fromScreenId) {
+        previousScreenBeforeScoreboard = fromScreenId || "screen-title";
+        syncJsonBinConfigInputs();
+        showScreen("screen-scoreboard");
+        await refreshScoreboardView();
+    }
+
+    function closeScoreboardScreen() {
+        showScreen(previousScreenBeforeScoreboard || "screen-title");
+    }
+
+    async function refreshScoreboardView() {
+        const listEl = document.getElementById("scoreboard-list");
+        const noteEl = document.getElementById("scoreboard-source-note");
+        if (!listEl) return;
+        listEl.innerHTML = `<div class="note-text">読み込み中...</div>`;
+        const { scores, source } = await fetchGlobalScores();
+        if (noteEl) noteEl.innerText = `データ元: ${source}`;
+
+        if (!scores.length) {
+            listEl.innerHTML = `<div class="note-text" style="padding:18px 0;">まだ記録がありません。高得点を目指そう！</div>`;
+            return;
+        }
+
+        listEl.innerHTML = scores.map((entry, idx) => {
+            const rank = idx + 1;
+            const cls = rank === 1 ? "top1" : (rank <= 3 ? "top3" : "");
+            const badge = rank === 1 ? "👑 1位" : `${rank}位`;
+            const modeLabel = entry.mode === "challenge" ? "チャレンジ" : (entry.mode === "speed" ? "スピード" : "ノーマル");
+            return `<div class="sb-row ${cls}">
+                <span>${badge}: ${escapeHtml(entry.name || "匿名")} <small style="color:#888;">(${modeLabel})</small></span>
+                <span><strong>${entry.score}点</strong></span>
+            </div>`;
+        }).join("");
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    async function evaluateRankInAndShowEntry(finalScore) {
+        myLatestFinishScore = finalScore;
+        rankinSubmittedThisRound = false;
+        const box = document.getElementById("rankin-entry-box");
+        const input = document.getElementById("rankin-free-name-input");
+        const status = document.getElementById("rankin-submit-status");
+        const btn = document.getElementById("btn-submit-scoreboard");
+        if (!box || !input) return;
+
+        const { scores } = await fetchGlobalScores();
+        const qualifiesTop10 = finalScore > 0 && (scores.length < 10 || finalScore > scores[scores.length - 1].score);
+
+        if (qualifiesTop10) {
+            const tentativeRank = scores.filter(s => s.score > finalScore).length + 1;
+            document.getElementById("rankin-message").innerText =
+                `🎉 第${tentativeRank}位で共通スコアボード（上位10）にランクイン！`;
+            input.value = myName || "";
+            if (status) status.innerText = "";
+            if (btn) btn.disabled = false;
+            box.classList.add("active");
+        } else {
+            box.classList.remove("active");
+        }
+    }
+
+    async function submitScoreToGlobalBoard() {
+        if (rankinSubmittedThisRound) return;
+        const input = document.getElementById("rankin-free-name-input");
+        const status = document.getElementById("rankin-submit-status");
+        const btn = document.getElementById("btn-submit-scoreboard");
+        const customName = (input?.value || "").trim() || myName || "プレイヤー";
+
+        if (btn) btn.disabled = true;
+        if (status) status.innerText = "登録中...";
+
+        const { scores } = await fetchGlobalScores();
+        scores.push({
+            name: customName.slice(0, 16),
+            score: myLatestFinishScore,
+            mode: currentMode,
+            date: new Date().toISOString().slice(0, 10)
+        });
+        const saveRes = await saveGlobalScores(scores);
+        rankinSubmittedThisRound = true;
+        if (status) status.innerText = `登録完了！（${saveRes.source}）`;
+    }
+
     // --- ズーム防止（ピンチ・ダブルタップ連打） ---
     let lastTouchEndTime = 0;
     document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
@@ -1490,6 +1773,9 @@
             return { ...item, rank: currentRank };
         });
 
+        const myEntry = entries.find(e => e.name === (myName || 'プレイヤー')) || entries[0];
+        evaluateRankInAndShowEntry(myEntry ? myEntry.score : score);
+
         const orderToAnnounce = [...ranked].reverse();
         const stepMs = 1100;
 
@@ -1630,12 +1916,12 @@
     let dragMatrix = null;
     const FINGER_LIFT_OFFSET = 58;
 
-    // ノーマルモード：得点に応じた落下間隔計算（50点でしっかり加速するカーブ）
+    // ノーマルモード：50点ごとに段階的に落下速度をアップ（50点・100点・150点…）
     function calcNormalIntervalMs(currentScore) {
-        const capped = Math.max(0, currentScore);
-        // 0点: 750ms -> 50点: 220ms（10点ごとに約106ms短縮し、50点以降も130ms下限まで滑らかに加速）
-        const interval = 750 - capped * 10.6;
-        return Math.max(130, Math.round(interval));
+        const tier = Math.max(0, Math.floor(currentScore / 50));
+        // 0tier(0-49点): 750ms, 1tier(50-99点): 570ms, 2tier(100-149点): 420ms, 3tier(150-199点): 300ms...
+        const interval = 750 - tier * 150 + (tier >= 2 ? (tier - 1) * 30 : 0);
+        return Math.max(130, interval);
     }
 
     function initGame() {
@@ -1670,7 +1956,7 @@
 
             currentIntervalMs = calcNormalIntervalMs(0);
             document.getElementById('hud-target').innerText = '全員終了まで';
-            document.getElementById('hud-info').innerText = 'ノーマル';
+            document.getElementById('hud-info').innerText = 'ノーマル(50点毎UP)';
             leftNextBox.classList.add('active');
             dockArea.classList.remove('active');
             normalControls.style.display = 'flex';
@@ -2007,7 +2293,6 @@
         drawGame();
     }
 
-    // 待機所のブロックが1つでも置ける場所があるか自動判別
     function hasAnyPlaceableDockPiece() {
         if (!Array.isArray(board) || board.length === 0) return true;
         let hasValidPiece = false;
@@ -2030,7 +2315,6 @@
         }
     }
 
-    // 画面上部の「降参」ボタンタップ時の処理
     function handleSurrenderTap() {
         if (gameFinished || waitingForOthersOver) return;
         if (currentMode === 'normal') {
@@ -2040,7 +2324,6 @@
         }
     }
 
-    // 配置不可または降参時の終了処理（スピードモードはリタイア表示＋他プレイヤー終了待機、スコアチャレンジは得点発表へ）
     function handleNoPlaceableBlockEnd(isSurrender) {
         if (gameFinished || waitingForOthersOver || myFinishedSent) return;
         myFinishedSent = true;
@@ -2062,7 +2345,6 @@
             return;
         }
 
-        // スピードモード：勝利条件到達前に置けなくなった場合は「リタイア」表示＋他プレイヤー終了まで待機
         waitingForOthersOver = true;
         const statusLabel = isSurrender ? 'リタイア（降参）' : 'リタイア';
         document.getElementById('hud-info').innerText = 'リタイア';
@@ -2137,7 +2419,12 @@
         if (lines > 0) {
             score += lines * 10;
             document.getElementById('hud-score').innerText = `${score}点`;
-            resetGameInterval(calcNormalIntervalMs(score));
+            const nextMs = calcNormalIntervalMs(score);
+            if (nextMs !== currentIntervalMs) {
+                resetGameInterval(nextMs);
+                const tier = Math.floor(score / 50);
+                document.getElementById('top-status-banner').innerText = `⚡ ${tier * 50}点到達！落下速度UP`;
+            }
         }
     }
 
