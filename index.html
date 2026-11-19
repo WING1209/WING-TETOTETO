@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>WINGブロック崩し</title>
     <!-- PeerJS CDN -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -12,13 +12,16 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
-        body {
+        html, body {
             margin: 0; padding: 0;
             background-color: #111; color: #fff;
             font-family: monospace, sans-serif;
             display: flex; justify-content: center; align-items: center;
             height: 100dvh; width: 100vw; overflow: hidden;
+            touch-action: none;
         }
         #container {
             width: 100%; max-width: 520px; height: 100dvh; max-height: 940px;
@@ -26,12 +29,14 @@
             display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
             position: relative; overflow: hidden;
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            touch-action: manipulation;
         }
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: none; flex-direction: column; justify-content: center; align-items: center;
             background: #1a1a1a; padding: 14px; z-index: 10;
             overflow-y: auto;
+            touch-action: manipulation;
         }
         .screen.active { display: flex; }
         h1, h3 { color: #00ffff; text-align: center; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
@@ -46,6 +51,7 @@
             padding: 11px 16px; font-size: 15px; border-radius: 6px;
             margin: 6px 0; width: 86%; max-width: 290px; text-align: center;
             cursor: pointer;
+            touch-action: manipulation;
         }
         button:active { background: #00ffff; color: #000; }
         button.lit-btn {
@@ -85,6 +91,7 @@
             justify-content: flex-start;
             padding: 6px 8px 8px 8px;
             overflow: hidden;
+            touch-action: none;
         }
         #game-main-area {
             width: 100%;
@@ -95,6 +102,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 5px;
+            touch-action: none;
         }
         .board-stage {
             flex: 1;
@@ -108,6 +116,7 @@
             border: 1px solid #2c2c3a;
             border-radius: 6px;
             padding: 4px;
+            touch-action: none;
         }
         #left-next-box {
             display: none;
@@ -143,6 +152,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            touch-action: none;
         }
         canvas#game-canvas {
             background: #000;
@@ -164,6 +174,7 @@
             padding: 3px 5px;
             flex-direction: column;
             justify-content: space-between;
+            touch-action: none;
         }
         #dock-area.active {
             display: flex;
@@ -180,6 +191,7 @@
             gap: 6px;
             flex: 1;
             min-height: 0;
+            touch-action: none;
         }
         .dock-slot {
             background: #141418;
@@ -206,6 +218,7 @@
             border: 1px solid #444;
             padding: 6px;
             border-radius: 6px;
+            touch-action: none;
         }
         .status-strip {
             display: flex;
@@ -241,6 +254,7 @@
             gap: 6px;
             width: 100%;
             align-items: stretch;
+            touch-action: none;
         }
         .big-gui-btn {
             flex: 1;
@@ -258,6 +272,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            touch-action: none;
         }
         .big-gui-btn:active {
             background: #00ffff;
@@ -459,8 +474,17 @@
     <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 2.5 (縦横消去・スコアチャレンジ・NEXT左配置)</div>
-        <button onclick="showScreen('screen-name')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
+        <div class="version">Ver 2.6 (ズーム完全防止・シングル/マルチ導線)</div>
+        <button onclick="showScreen('screen-play-type')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
+    </div>
+
+    <!-- ①-B シングルプレイ／マルチプレイ選択画面 -->
+    <div id="screen-play-type" class="screen">
+        <h1>プレイ人数タイプ選択</h1>
+        <p class="note-text">シングルプレイまたはマルチプレイを選んでください</p>
+        <button onclick="selectPlayType('single')" style="background:#004466; border-color:#00ffff; font-weight:bold;">シングルプレイ（1人）</button>
+        <button onclick="selectPlayType('multi')" style="background:#440044; border-color:#ff00ff; font-weight:bold;">マルチプレイ（通信対戦）</button>
+        <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
     <!-- ② 名前入力画面 -->
@@ -469,10 +493,10 @@
         <p class="note-text">ひらがな6文字以内で入力してください</p>
         <input type="text" id="player-name-input" placeholder="例: やまだ" maxlength="6">
         <button onclick="submitName()">次へ</button>
-        <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
+        <button onclick="showScreen('screen-play-type')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
-    <!-- ③ ホストまたはゲスト選択 -->
+    <!-- ③ ホストまたはゲスト選択（マルチプレイ時のみ使用） -->
     <div id="screen-role" class="screen">
         <h1>モード選択</h1>
         <p class="note-text">ホストまたはゲストを選んでください</p>
@@ -511,7 +535,7 @@
         <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:16px;">最初に戻る</button>
     </div>
 
-    <!-- ⑥ ホスト：ブロック種類数＆ゲームモード選択 -->
+    <!-- ⑥ ブロック種類数＆ゲームモード選択 -->
     <div id="screen-host-setup" class="screen">
         <div id="host-setup-controls" style="width:100%; display:flex; flex-direction:column; align-items:center;">
             <h1>ブロック種類数＆モード</h1>
@@ -566,7 +590,6 @@
     <div id="screen-game" class="screen">
         <div id="game-main-area">
             <div class="board-stage">
-                <!-- ノーマルモード用：画面左側のNEXT表示 -->
                 <div id="left-next-box">
                     <div class="left-next-title">NEXT</div>
                     <canvas id="next-canvas" width="56" height="56"></canvas>
@@ -577,13 +600,11 @@
                 </div>
             </div>
 
-            <!-- スピード／スコアチャレンジ用：下部ブロック待機所（4枠） -->
             <div id="dock-area">
                 <div class="dock-label">ブロック待機所（縦または横1列で消去・タップしたままドラッグ設置）</div>
                 <div id="dock-slots"></div>
             </div>
 
-            <!-- 下部GUIパネル（ステータス＋大きめの押しやすい操作ボタン・「やめる」なし） -->
             <div class="bottom-gui-panel">
                 <div class="status-strip">
                     <div class="hud-pill">
@@ -600,15 +621,13 @@
                     </div>
                 </div>
 
-                <!-- ノーマルモード用：大きめの操作ボタン -->
                 <div id="normal-controls" class="big-controls-bar">
-                    <button class="big-gui-btn" onclick="movePiece(-1)">◀ 左</button>
-                    <button class="big-gui-btn" onclick="movePiece(1)">▶ 右</button>
-                    <button class="big-gui-btn rotate-btn" onclick="rotatePiece()">🔄 回転</button>
-                    <button class="big-gui-btn" onclick="hardDrop()">⏬ 落下</button>
+                    <button type="button" class="big-gui-btn" ontouchstart="onMoveBtnTouch(event, -1)" onclick="movePiece(-1)">◀ 左</button>
+                    <button type="button" class="big-gui-btn" ontouchstart="onMoveBtnTouch(event, 1)" onclick="movePiece(1)">▶ 右</button>
+                    <button type="button" class="big-gui-btn rotate-btn" ontouchstart="onRotateBtnTouch(event)" onclick="rotatePiece()">🔄 回転</button>
+                    <button type="button" class="big-gui-btn" ontouchstart="onDropBtnTouch(event)" onclick="hardDrop()">⏬ 落下</button>
                 </div>
 
-                <!-- スピード／スコアチャレンジ用：大きめ案内バー -->
                 <div id="speed-controls-bar" class="big-controls-bar" style="display:none;">
                     <div class="big-gui-btn" style="background:#261433; border-color:#ff88ff; font-size:13px; cursor:default;">
                         指より少し上に浮かべて設置（縦・横1列で消去／回転不可）
@@ -639,7 +658,7 @@
     </div>
 </div>
 
-<!-- 勝利条件ダイアログ（スピードモード用：ホストが選択、他プレイヤーは表示＆OK） -->
+<!-- 勝利条件ダイアログ -->
 <div id="target-dialog-overlay">
     <div class="dialog-card">
         <h3 id="dialog-title" style="margin-top:0;">勝利条件を設定</h3>
@@ -684,6 +703,26 @@
 </div>
 
 <script>
+    // --- ズーム防止（ピンチ・ダブルタップ連打） ---
+    let lastTouchEndTime = 0;
+    document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchEndTime <= 320 && document.getElementById('screen-game')?.classList.contains('active')) {
+            e.preventDefault();
+        }
+        lastTouchEndTime = now;
+    }, { passive: false });
+
+    let playType = "multi"; // "single" | "multi"
     let myName = "";
     let myId = "";
     let totalBlockCount = 6;
@@ -730,13 +769,20 @@
         }
     }
 
+    function selectPlayType(type) {
+        playType = type;
+        showScreen('screen-name');
+    }
+
     function syncGameModeOptionsForPlayers() {
-        const count = parseInt(document.getElementById('player-count')?.value || '2', 10);
+        const effectiveCount = (playType === 'single')
+            ? 1
+            : parseInt(document.getElementById('player-count')?.value || '2', 10);
         const challengeOpt = document.getElementById('opt-score-challenge');
         const modeSelect = document.getElementById('game-mode-select');
         if (!challengeOpt || !modeSelect) return;
 
-        if (count === 1) {
+        if (effectiveCount === 1) {
             challengeOpt.style.display = 'block';
         } else {
             challengeOpt.style.display = 'none';
@@ -758,7 +804,11 @@
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
         if (screenId === 'screen-host-count') syncGameModeOptionsForPlayers();
-        else if (screenId === 'screen-host-setup') syncGameModeOptionsForPlayers();
+        else if (screenId === 'screen-host-setup') {
+            document.getElementById('host-setup-controls').style.display = 'flex';
+            document.getElementById('please-wait-box').style.display = 'none';
+            syncGameModeOptionsForPlayers();
+        }
         else if (screenId === 'screen-builder') initBuilder();
         else if (screenId === 'screen-game') initGame();
     }
@@ -770,7 +820,22 @@
             return;
         }
         myName = val;
-        showScreen('screen-role');
+
+        if (playType === 'single') {
+            // シングルプレイ：ホスト/ゲスト選択・人数決定・参加番号ロビーをスキップし、いきなりブロック種類数＆モード選択へ
+            isHost = true;
+            maxPlayers = 1;
+            playerIndex = 0;
+            myId = 'single_' + Date.now();
+            connections = [];
+            completedPlayers = new Set();
+            okPlayers = new Set();
+            finishedPlayersMap = {};
+            rematchReadyPlayers = new Set();
+            showHostSetupScreen(true);
+        } else {
+            showScreen('screen-role');
+        }
     }
 
     function showGuestJoinBox() {
@@ -794,6 +859,7 @@
     }
 
     function broadcastToPeers(payload) {
+        if (playType === 'single') return;
         if (isHost) {
             connections.forEach(c => {
                 if (c.open) c.send(payload);
@@ -935,18 +1001,20 @@
         myOkSent = false;
         myFinishedSent = false;
 
-        connections.forEach((c, idx) => {
-            const pIdx = idx + 1;
-            const count = allocations[pIdx] ?? 1;
-            if (c.open) {
-                c.send({
-                    type: 'start_build',
-                    totalBlockCount,
-                    mode: currentMode,
-                    assignedCount: count
-                });
-            }
-        });
+        if (playType === 'multi') {
+            connections.forEach((c, idx) => {
+                const pIdx = idx + 1;
+                const count = allocations[pIdx] ?? 1;
+                if (c.open) {
+                    c.send({
+                        type: 'start_build',
+                        totalBlockCount,
+                        mode: currentMode,
+                        assignedCount: count
+                    });
+                }
+            });
+        }
 
         showScreen('screen-builder');
     }
@@ -1078,7 +1146,6 @@
         if (currentMode === 'speed') {
             showTargetScoreDialog(true, winTargetScore);
         } else {
-            // ノーマル・スコアチャレンジは勝利点ダイアログをスキップしてGOへ
             okPlayers.add(myId || ('local_' + myName));
             broadcastToPeers({ type: 'normal_auto_ok' });
             checkAllOkAndLaunchGo();
@@ -1459,17 +1526,19 @@
             myOkSent = false;
             myFinishedSent = false;
 
-            connections.forEach((c, idx) => {
-                const count = allocations[idx + 1] ?? 1;
-                if (c.open) {
-                    c.send({
-                        type: 'start_rematch_builder',
-                        totalBlockCount,
-                        mode: currentMode,
-                        assignedCount: count
-                    });
-                }
-            });
+            if (playType === 'multi') {
+                connections.forEach((c, idx) => {
+                    const count = allocations[idx + 1] ?? 1;
+                    if (c.open) {
+                        c.send({
+                            type: 'start_rematch_builder',
+                            totalBlockCount,
+                            mode: currentMode,
+                            assignedCount: count
+                        });
+                    }
+                });
+            }
 
             showScreen('screen-builder');
         }
@@ -1542,7 +1611,6 @@
         if (currentMode === 'normal') {
             boardWidth = 10;
             boardHeight = 20;
-            // 左側にNEXT表示枠（74px）を確保しつつパズル盤面を最大化
             const usableWidth = Math.max(180, containerWidth - 112);
             const usableHeight = Math.max(260, containerHeight - 130);
             const maxByHeight = Math.floor(usableHeight / boardHeight);
@@ -1665,6 +1733,24 @@
         drawGame();
     }
 
+    function onMoveBtnTouch(e, dir) {
+        e.preventDefault();
+        e.stopPropagation();
+        movePiece(dir);
+    }
+
+    function onRotateBtnTouch(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        rotatePiece();
+    }
+
+    function onDropBtnTouch(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        hardDrop();
+    }
+
     function movePiece(dir) {
         if (gameFinished || waitingForOthersOver || currentMode !== 'normal' || !currentPiece) return;
         const nx = currentPiece.x + dir;
@@ -1721,7 +1807,10 @@
             ...record
         };
 
-        if (isHost) {
+        if (playType === 'single' || maxPlayers === 1) {
+            waitingForOthersOver = false;
+            showFinalResultScreen(finishedPlayersMap);
+        } else if (isHost) {
             checkAllPlayersFinishedNormal();
         } else if (guestConnection && guestConnection.open) {
             guestConnection.send(payload);
@@ -1926,7 +2015,6 @@
         }
     }
 
-    // スピード／スコアチャレンジ用：縦または横が揃った列を消去
     function clearRowsAndColsPlacement() {
         const fullRows = [];
         const fullCols = [];
