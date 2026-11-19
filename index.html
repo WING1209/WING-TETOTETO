@@ -43,11 +43,25 @@
         }
         button, input, select {
             background: #333; color: #fff; border: 2px solid #00ffff;
-            padding: 10px 16px; font-size: 15px; border-radius: 6px;
+            padding: 11px 16px; font-size: 15px; border-radius: 6px;
             margin: 6px 0; width: 86%; max-width: 290px; text-align: center;
             cursor: pointer;
         }
         button:active { background: #00ffff; color: #000; }
+        button.lit-btn {
+            background: #009900;
+            border-color: #00ff00;
+            color: #fff;
+            font-weight: bold;
+            box-shadow: 0 0 16px rgba(0, 255, 0, 0.7);
+        }
+        button.dim-btn {
+            background: #222;
+            border-color: #555;
+            color: #777;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
         input, select { background: #222; cursor: text; }
         select { cursor: pointer; }
 
@@ -208,7 +222,7 @@
             pointer-events: none;
         }
 
-        /* ドラッグ中の浮遊ブロック（指より少し上に表示） */
+        /* ドラッグ中の浮遊ブロック */
         #drag-ghost {
             position: fixed;
             pointer-events: none;
@@ -216,6 +230,59 @@
             display: none;
             transform: translate(-50%, -50%);
             filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.9));
+        }
+
+        /* 勝利条件ダイアログ */
+        #target-dialog-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            z-index: 1800;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        #target-dialog-overlay.active {
+            display: flex;
+        }
+        .dialog-card {
+            width: 100%;
+            max-width: 320px;
+            background: #20202b;
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 18px 14px;
+            text-align: center;
+            box-shadow: 0 0 24px rgba(0, 255, 255, 0.35);
+        }
+
+        /* ゲーム開始時「GO!」中央表示 */
+        #go-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 1900;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+        #go-overlay.active {
+            display: flex;
+        }
+        .go-text {
+            font-size: 76px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 24px #00ffff, 0 0 42px #00ff88;
+            letter-spacing: 6px;
+            animation: goPop 0.35s ease-out;
+        }
+        @keyframes goPop {
+            0% { transform: scale(0.4); opacity: 0; }
+            80% { transform: scale(1.12); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         /* WIN花火演出オーバーレイ */
@@ -302,7 +369,7 @@
     <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 2.1 (指オフセット・勝利点＆花火WIN・共通ブロック)</div>
+        <div class="version">Ver 2.2 (シンプルフロー・レディー＆GO!)</div>
         <button onclick="showScreen('screen-name')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
     </div>
 
@@ -311,94 +378,100 @@
         <h1>プレイヤー名入力</h1>
         <p class="note-text">ひらがな6文字以内で入力してください</p>
         <input type="text" id="player-name-input" placeholder="例: やまだ" maxlength="6">
-        <button onclick="submitName()">次へ（作成数・ルーム設定）</button>
+        <button onclick="submitName()">次へ</button>
         <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
-    <!-- ③ 作成個数＆ルーム設定画面 -->
-    <div id="screen-room" class="screen">
-        <h1>作成数＆ルーム設定</h1>
+    <!-- ③ ホストまたはゲスト選択（シンプル入口） -->
+    <div id="screen-role" class="screen">
+        <h1>モード選択</h1>
+        <p class="note-text">ホストまたはゲストを選んでください</p>
+        <button onclick="showScreen('screen-host-count')" style="background:#004444;">ホスト</button>
+        <button onclick="showGuestJoinBox()" style="background:#440044;">ゲスト</button>
 
-        <label class="note-text">全員で合計何種類のブロックを作るか</label>
-        <select id="total-block-count">
-            <option value="2">2種類</option>
-            <option value="3">3種類</option>
-            <option value="4">4種類</option>
-            <option value="5">5種類</option>
-            <option value="6" selected>6種類</option>
-            <option value="8">8種類</option>
-            <option value="10">10種類</option>
-        </select>
-
-        <label class="note-text">プレイ人数（最低1個保証＋余りをランダム振り分け）</label>
-        <select id="player-count">
-            <option value="1">1名 (ソロプレイ)</option>
-            <option value="2">2名</option>
-            <option value="3">3名</option>
-            <option value="4">4名</option>
-            <option value="5">5名</option>
-        </select>
-
-        <button onclick="startSoloBuilder()" style="background:#224422; border-color:#88ff88;">このままブロック作成へ</button>
-        <button onclick="setupAsHost()" style="background:#004444;">ホストとしてルーム作成</button>
-        <button onclick="showJoinInput()" style="background:#440044;">ゲストとしてルーム参加</button>
-
-        <div id="join-box" style="display:none; width:100%; flex-direction:column; align-items:center;">
-            <input type="text" id="room-key-input" placeholder="4桁のルームキー" maxlength="4" inputmode="numeric">
-            <button onclick="joinAsGuest()" style="background:#005500;">ルームに接続</button>
+        <div id="guest-join-box" style="display:none; width:100%; flex-direction:column; align-items:center; margin-top:8px;">
+            <input type="text" id="room-key-input" placeholder="4桁の参加番号" maxlength="4" inputmode="numeric">
+            <button onclick="joinAsGuest()" style="background:#005500;">参加する</button>
         </div>
 
-        <details style="width:86%; max-width:290px; margin-top:6px; background:#222; padding:6px 10px; border-radius:5px; border:1px solid #444;">
-            <summary style="font-size:12px; color:#00ffff; cursor:pointer;">JSONBin.io 共有設定（任意）</summary>
-            <p class="note-text" style="text-align:left;">※リアルタイム対戦はPeerJSで行い、ブロックやスコアの共有保存にJSONBin.ioを使えます。</p>
-            <input type="text" id="jsonbin-key" placeholder="X-Master-Key (任意)" style="width:100%; font-size:12px; padding:7px; margin:4px 0;">
-            <input type="text" id="jsonbin-bin-id" placeholder="Bin ID (既存を使う場合・任意)" style="width:100%; font-size:12px; padding:7px; margin:4px 0;">
-        </details>
-
-        <button onclick="showScreen('screen-name')" style="border-color:#ff5555; color:#ff5555; margin-top:8px;">もどる</button>
+        <button onclick="showScreen('screen-name')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
-    <!-- ④ ブロック生成画面 -->
+    <!-- ④ ホスト：何人で遊ぶか決定 -->
+    <div id="screen-host-count" class="screen">
+        <h1>プレイ人数決定</h1>
+        <p class="note-text">何人で遊ぶか決めてください</p>
+        <select id="player-count">
+            <option value="1">1人</option>
+            <option value="2" selected>2人</option>
+            <option value="3">3人</option>
+            <option value="4">4人</option>
+            <option value="5">5人</option>
+        </select>
+        <button onclick="confirmHostCountAndCreateRoom()" style="background:#005555;">決定</button>
+        <button onclick="showScreen('screen-role')" style="border-color:#ff5555; color:#ff5555; margin-top:12px;">もどる</button>
+    </div>
+
+    <!-- ⑤ 参加番号表示・接続待ち・【次に】ボタン -->
+    <div id="screen-lobby" class="screen">
+        <div id="key-display" style="font-size:28px; color:#00ff00; margin:8px 0; font-weight:bold;">参加番号: ----</div>
+        <h3 id="lobby-status">接続待ち</h3>
+        <p id="connection-count" style="font-size:14px; color:#ccc; margin:6px 0;">0 / 0人</p>
+        <button id="btn-lobby-next" class="dim-btn" onclick="onHostLobbyNext()" disabled>次に</button>
+        <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:16px;">最初に戻る</button>
+    </div>
+
+    <!-- ⑥ ホスト：ブロック種類数＆ゲームモード選択（他はプリーズウェイト） -->
+    <div id="screen-host-setup" class="screen">
+        <div id="host-setup-controls" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+            <h1>ブロック種類数＆モード</h1>
+
+            <label class="note-text">ブロックの種類数</label>
+            <select id="total-block-count">
+                <option value="2">2種類</option>
+                <option value="3">3種類</option>
+                <option value="4">4種類</option>
+                <option value="5">5種類</option>
+                <option value="6" selected>6種類</option>
+                <option value="8">8種類</option>
+                <option value="10">10種類</option>
+            </select>
+
+            <label class="note-text">ゲームモード</label>
+            <select id="game-mode-select">
+                <option value="normal">ノーマルモード</option>
+                <option value="speed">スピードモード</option>
+            </select>
+
+            <button onclick="distributeBlocksAndStartBuild()" style="background:#006644; border-color:#00ff88; font-weight:bold;">ブロック作成へ進む</button>
+        </div>
+
+        <div id="please-wait-box" style="display:none; flex-direction:column; align-items:center; text-align:center;">
+            <h1 style="color:#ffd700; font-size:24px;">プリーズウェイト</h1>
+            <p class="note-text" style="font-size:13px; color:#ccc;">ホストがブロックの種類数とゲームモードを選択中です...</p>
+        </div>
+    </div>
+
+    <!-- ⑦ ブロック生成画面 -->
     <div id="screen-builder" class="screen">
-        <div id="builder-assign-badge" class="assign-badge">あなたは2個作成してください</div>
-        <h3 id="builder-instruction">ブロックを作ろう (1/2個目)</h3>
-        <p id="builder-subinfo" class="note-text" style="color:#00ffff;">全プレイヤー共通ブロックとして使われます</p>
+        <div id="builder-assign-badge" class="assign-badge">あなたは〇個ブロックを作成してください</div>
+        <h3 id="builder-instruction">作成状況: 0 / 0個</h3>
 
         <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center; min-height:165px;"></div>
 
         <button onclick="toggleBuilderSize()" id="btn-toggle-size" style="background:#224; border-color:#88ff88; color:#88ff88; padding:8px 14px; font-size:13px;">モード切替: 3×3</button>
-        <button onclick="completeCurrentBlock()" style="background:#005555; border-color:#00ffff;">このブロックで決定</button>
+        <button onclick="addCurrentBlockToMine()" style="background:#004466; border-color:#00ffff;">このブロックを追加</button>
+        <button id="btn-complete-blocks" class="dim-btn" onclick="submitMyBlocksDone()" disabled>完了</button>
     </div>
 
-    <!-- ⑤ 待機ロビー画面 -->
-    <div id="screen-lobby" class="screen">
-        <h1 id="lobby-status">接続待機中...</h1>
-        <div id="key-display" style="font-size:22px; color:#00ff00; margin:10px 0; font-weight:bold;"></div>
-        <p id="connection-count" style="font-size:13px; color:#ccc;"></p>
-        <p id="lobby-blocks-info" class="note-text" style="color:#ff88ff;"></p>
-
-        <button id="btn-start-game" onclick="proceedToModeSelect()" style="display:none; background:#00aa00; border-color:#00ff00; font-weight:bold;">モード・勝利点選択へ</button>
-        <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">最初に戻る</button>
+    <!-- ⑧ 作成完了待ち＆ホストの【レディー】ボタン画面 -->
+    <div id="screen-ready" class="screen">
+        <h1 id="ready-title">ブロック作成確認</h1>
+        <p id="ready-status-text" style="font-size:14px; color:#ccc; text-align:center; margin:10px 0;"></p>
+        <button id="btn-ready-trigger" class="dim-btn" onclick="openTargetScoreDialogForAll()" disabled>レディー</button>
     </div>
 
-    <!-- ⑥ モード＆勝利条件選択画面 -->
-    <div id="screen-mode" class="screen">
-        <h1>モード＆勝利条件選択</h1>
-
-        <label class="note-text">何点でクリアにするか（勝利条件）</label>
-        <select id="win-target-score">
-            <option value="20">20点でクリア</option>
-            <option value="30" selected>30点でクリア</option>
-            <option value="50">50点でクリア</option>
-            <option value="80">80点でクリア</option>
-            <option value="100">100点でクリア</option>
-        </select>
-
-        <button onclick="selectModeAndStart('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦20×横10・落下＆NEXT表示)</span></button>
-        <button onclick="selectModeAndStart('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・指オフセット設置)</span></button>
-    </div>
-
-    <!-- ⑦ ゲームプレイ画面 -->
+    <!-- ⑨ ゲームプレイ画面 -->
     <div id="screen-game" class="screen">
         <div id="game-main-area">
             <div id="game-layout">
@@ -454,7 +527,7 @@
         </div>
     </div>
 
-    <!-- ⑧ 結果発表画面 -->
+    <!-- ⑩ 結果発表画面 -->
     <div id="screen-result" class="screen">
         <h1 id="result-title">結果発表</h1>
         <div id="result-list" style="width:90%; max-height:240px; overflow-y:auto; margin:14px 0; background:#222; border:1px solid #444; border-radius:5px; padding:10px; font-size:15px; text-align:center;"></div>
@@ -463,7 +536,29 @@
     </div>
 </div>
 
-<!-- ドラッグ中表示用（指の少し上に浮遊） -->
+<!-- 勝利条件ダイアログ -->
+<div id="target-dialog-overlay">
+    <div class="dialog-card">
+        <h3 style="margin-top:0;">勝利条件を設定</h3>
+        <p class="note-text">何点でクリアにするか選んでOKを押してください</p>
+        <select id="dialog-win-score" style="width:100%;">
+            <option value="20">20点</option>
+            <option value="30" selected>30点</option>
+            <option value="50">50点</option>
+            <option value="80">80点</option>
+            <option value="100">100点</option>
+        </select>
+        <button id="btn-dialog-ok" onclick="confirmTargetScoreOk()" style="width:100%; background:#007700; border-color:#00ff00; font-weight:bold;">OK</button>
+        <p id="dialog-ok-status" class="note-text" style="color:#ffd700; margin-top:8px;"></p>
+    </div>
+</div>
+
+<!-- ゲーム開始時「GO!」中央表示 -->
+<div id="go-overlay">
+    <div class="go-text">GO!</div>
+</div>
+
+<!-- ドラッグ中表示用 -->
 <canvas id="drag-ghost"></canvas>
 
 <!-- 最速到達時のWIN＆花火パーティクル演出 -->
@@ -481,10 +576,11 @@
 
 <script>
     let myName = "";
+    let myId = "";
     let totalBlockCount = 6;
-    let myAssignedBlockCount = 3;
+    let myAssignedBlockCount = 1;
     let myBuiltBlocks = [];
-    let sharedBlocks = []; // 全プレイヤー共通ブロックプール
+    let sharedBlocks = [];
     let currentBuilderSize = 3;
     let builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
 
@@ -495,86 +591,29 @@
     let playerIndex = 0;
     let connections = [];
     let guestConnection = null;
-    let remoteResults = {};
 
+    // 完了＆OK状態管理
+    let completedPlayers = new Set();
+    let okPlayers = new Set();
+    let myDoneSent = false;
+    let myOkSent = false;
+
+    let remoteResults = {};
     let winTargetScore = 30;
     let gameFinished = false;
     let fireworksAnimId = null;
     let winActionTimer = null;
 
-    // JSONBin.io 連携用設定
-    let jsonbinKey = "";
-    let jsonbinBinId = "";
-
-    function readJsonBinSettings() {
-        jsonbinKey = (document.getElementById('jsonbin-key')?.value || '').trim();
-        jsonbinBinId = (document.getElementById('jsonbin-bin-id')?.value || '').trim();
-    }
-
-    async function syncToJsonBin(payloadObj) {
-        readJsonBinSettings();
-        if (!jsonbinKey) return null;
-        try {
-            if (!jsonbinBinId) {
-                const res = await fetch('https://api.jsonbin.io/v3/b', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': jsonbinKey,
-                        'X-Bin-Name': `wing_block_${roomKey || 'solo'}`
-                    },
-                    body: JSON.stringify(payloadObj)
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    jsonbinBinId = data.metadata?.id || '';
-                    return data;
-                }
-            } else {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinBinId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': jsonbinKey
-                    },
-                    body: JSON.stringify(payloadObj)
-                });
-                if (res.ok) return await res.json();
-            }
-        } catch (err) {
-            console.warn('JSONBin sync error:', err);
-        }
-        return null;
-    }
-
-    // 最低1個を各プレイヤーに保証し、余りをランダムに振り分ける
-    function allocateBlockCounts(total, players) {
-        const counts = Array(players).fill(0);
-        if (players <= 0) return counts;
-
-        if (total >= players) {
-            // 全員に最低1個ずつ配布
-            for (let i = 0; i < players; i++) counts[i] = 1;
-            let remainder = total - players;
-            while (remainder > 0) {
-                const pick = Math.floor(Math.random() * players);
-                counts[pick]++;
-                remainder--;
-            }
+    function setButtonLit(btnId, lit) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.disabled = !lit;
+        if (lit) {
+            btn.classList.remove('dim-btn');
+            btn.classList.add('lit-btn');
         } else {
-            // 合計数が人数未満の場合は先頭から1個ずつ配布
-            for (let i = 0; i < total; i++) counts[i] = 1;
-        }
-        return counts;
-    }
-
-    function broadcastToPeers(payload) {
-        if (isHost) {
-            connections.forEach(c => {
-                if (c.open) c.send(payload);
-            });
-        } else if (guestConnection && guestConnection.open) {
-            guestConnection.send(payload);
+            btn.classList.remove('lit-btn');
+            btn.classList.add('dim-btn');
         }
     }
 
@@ -596,27 +635,186 @@
             return;
         }
         myName = val;
-        myBuiltBlocks = [];
-        sharedBlocks = [];
-        showScreen('screen-room');
+        showScreen('screen-role');
     }
 
-    function startSoloBuilder() {
-        readJsonBinSettings();
+    function showGuestJoinBox() {
+        document.getElementById('guest-join-box').style.display = 'flex';
+    }
+
+    // 最低1個保証＋余りをランダム振り分け
+    function allocateBlockCounts(total, players) {
+        const counts = Array(players).fill(0);
+        if (players <= 0) return counts;
+        if (total >= players) {
+            for (let i = 0; i < players; i++) counts[i] = 1;
+            let rem = total - players;
+            while (rem > 0) {
+                counts[Math.floor(Math.random() * players)]++;
+                rem--;
+            }
+        } else {
+            for (let i = 0; i < total; i++) counts[i] = 1;
+        }
+        return counts;
+    }
+
+    function broadcastToPeers(payload) {
+        if (isHost) {
+            connections.forEach(c => {
+                if (c.open) c.send(payload);
+            });
+        } else if (guestConnection && guestConnection.open) {
+            guestConnection.send(payload);
+        }
+    }
+
+    function confirmHostCountAndCreateRoom() {
         isHost = true;
-        maxPlayers = 1;
+        maxPlayers = parseInt(document.getElementById('player-count').value, 10);
         playerIndex = 0;
+        roomKey = Math.floor(1000 + Math.random() * 9000).toString();
+        connections = [];
+        completedPlayers = new Set();
+        okPlayers = new Set();
+        remoteResults = {};
+
+        try {
+            peer = new Peer('wing_block_' + roomKey);
+            peer.on('open', (id) => {
+                myId = id;
+                updateLobbyView();
+                showScreen('screen-lobby');
+            });
+            peer.on('error', () => {
+                alert('ルーム作成エラー。再試行してください。');
+            });
+            peer.on('connection', (c) => {
+                if (connections.length + 1 >= maxPlayers) {
+                    c.on('open', () => {
+                        c.send({ type: 'full' });
+                        setTimeout(() => c.close(), 200);
+                    });
+                    return;
+                }
+                connections.push(c);
+                c.on('open', () => {
+                    c.send({ type: 'hello_ack', roomKey, maxPlayers });
+                    updateLobbyView();
+                });
+                c.on('data', (data) => handlePeerMessage(data, c));
+                c.on('close', () => {
+                    connections = connections.filter(conn => conn !== c);
+                    updateLobbyView();
+                });
+            });
+        } catch (e) {
+            alert('通信モジュールの初期化エラー');
+        }
+    }
+
+    function updateLobbyView() {
+        const currentCount = 1 + connections.length;
+        document.getElementById('key-display').innerText = `参加番号: ${roomKey}`;
+        document.getElementById('connection-count').innerText = `${currentCount} / ${maxPlayers}人`;
+
+        if (currentCount >= maxPlayers) {
+            document.getElementById('lobby-status').innerText = '人数が揃いました';
+            setButtonLit('btn-lobby-next', true);
+        } else {
+            document.getElementById('lobby-status').innerText = '接続待ち';
+            setButtonLit('btn-lobby-next', false);
+        }
+    }
+
+    function joinAsGuest() {
+        isHost = false;
+        const key = document.getElementById('room-key-input').value.trim();
+        if (!/^\d{4}$/.test(key)) {
+            alert('4桁の参加番号を入力してください');
+            return;
+        }
+        roomKey = key;
+        myDoneSent = false;
+        myOkSent = false;
+        remoteResults = {};
+
+        try {
+            peer = new Peer();
+            peer.on('open', (id) => {
+                myId = id;
+                guestConnection = peer.connect('wing_block_' + roomKey);
+                guestConnection.on('open', () => {
+                    document.getElementById('key-display').innerText = `参加番号: ${roomKey}`;
+                    document.getElementById('lobby-status').innerText = 'ホストと接続中...';
+                    document.getElementById('connection-count').innerText = '接続完了';
+                    setButtonLit('btn-lobby-next', false);
+                    guestConnection.send({ type: 'guest_joined', senderId: myId, name: myName });
+                    showScreen('screen-lobby');
+                });
+                guestConnection.on('data', (data) => {
+                    if (data && data.type === 'full') {
+                        alert('定員に達しています。');
+                        location.reload();
+                        return;
+                    }
+                    handlePeerMessage(data, guestConnection);
+                });
+                guestConnection.on('error', () => {
+                    alert('参加番号が見つかりません。');
+                });
+            });
+        } catch (e) {
+            alert('接続処理エラー');
+        }
+    }
+
+    function onHostLobbyNext() {
+        if (!isHost) return;
+        broadcastToPeers({ type: 'go_host_setup' });
+        showHostSetupScreen(true);
+    }
+
+    function showHostSetupScreen(isHostUser) {
+        document.getElementById('host-setup-controls').style.display = isHostUser ? 'flex' : 'none';
+        document.getElementById('please-wait-box').style.display = isHostUser ? 'none' : 'flex';
+        showScreen('screen-host-setup');
+    }
+
+    function distributeBlocksAndStartBuild() {
+        if (!isHost) return;
         totalBlockCount = parseInt(document.getElementById('total-block-count').value, 10);
-        const alloc = allocateBlockCounts(totalBlockCount, 1);
-        myAssignedBlockCount = alloc[0];
+        currentMode = document.getElementById('game-mode-select').value;
+
+        const allocations = allocateBlockCounts(totalBlockCount, maxPlayers);
+        myAssignedBlockCount = allocations[0];
         myBuiltBlocks = [];
         sharedBlocks = [];
+        completedPlayers = new Set();
+        okPlayers = new Set();
+        myDoneSent = false;
+        myOkSent = false;
+
+        connections.forEach((c, idx) => {
+            const pIdx = idx + 1;
+            const count = allocations[pIdx] ?? 1;
+            if (c.open) {
+                c.send({
+                    type: 'start_build',
+                    totalBlockCount,
+                    mode: currentMode,
+                    assignedCount: count
+                });
+            }
+        });
+
         showScreen('screen-builder');
     }
 
     function initBuilder() {
         currentBuilderSize = 3;
         builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
+        updateBuilderLabels();
         renderBuilderGrid();
     }
 
@@ -626,14 +824,15 @@
         renderBuilderGrid();
     }
 
-    function renderBuilderGrid() {
+    function updateBuilderLabels() {
         document.getElementById('builder-assign-badge').innerText =
-            `あなたは${myAssignedBlockCount}個作成してください`;
+            `あなたは${myAssignedBlockCount}個ブロックを作成してください`;
         document.getElementById('builder-instruction').innerText =
-            `ブロックを作ろう (${myBuiltBlocks.length + 1}/${myAssignedBlockCount}個目)`;
-        document.getElementById('builder-subinfo').innerText =
-            `合計${totalBlockCount}種類を全プレイヤーで共通使用します`;
+            `作成済み: ${myBuiltBlocks.length} / ${myAssignedBlockCount}個`;
+        setButtonLit('btn-complete-blocks', myBuiltBlocks.length >= myAssignedBlockCount);
+    }
 
+    function renderBuilderGrid() {
         const container = document.getElementById('builder-canvas-container');
         container.innerHTML = '';
 
@@ -655,7 +854,12 @@
         container.appendChild(gridDiv);
     }
 
-    async function completeCurrentBlock() {
+    function addCurrentBlockToMine() {
+        if (myBuiltBlocks.length >= myAssignedBlockCount) {
+            alert('必要個数は作成済みです。「完了」を押してください。');
+            return;
+        }
+
         let hasCell = false;
         let minC = 6, maxC = -1, minR = 3, maxR = -1;
 
@@ -689,74 +893,145 @@
         if (!sharedBlocks.some(b => JSON.stringify(b) === JSON.stringify(pieceMatrix))) {
             sharedBlocks.push(pieceMatrix);
         }
-        builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
 
-        if (myBuiltBlocks.length < myAssignedBlockCount) {
-            renderBuilderGrid();
-        } else {
-            if (maxPlayers === 1 && !peer) {
-                showScreen('screen-mode');
-            } else if (isHost) {
-                await syncToJsonBin({ roomKey, totalBlockCount, blocks: sharedBlocks });
-                updateLobbyDisplay();
-                showScreen('screen-lobby');
-            } else if (guestConnection && guestConnection.open) {
-                guestConnection.send({ type: 'blocks', name: myName, blocks: myBuiltBlocks });
-                await syncToJsonBin({ roomKey, player: myName, blocks: myBuiltBlocks });
-                document.getElementById('lobby-status').innerText = '作成完了！ホストの開始待ち...';
-                document.getElementById('lobby-blocks-info').innerText =
-                    `共通ブロックプール: ${sharedBlocks.length}個（あなた作成: ${myBuiltBlocks.length}個）`;
-                showScreen('screen-lobby');
-            }
+        builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
+        updateBuilderLabels();
+        renderBuilderGrid();
+    }
+
+    function submitMyBlocksDone() {
+        if (myBuiltBlocks.length < myAssignedBlockCount || myDoneSent) return;
+        myDoneSent = true;
+        const actorId = myId || ('local_' + myName);
+
+        if (isHost) {
+            completedPlayers.add(actorId);
+            updateReadyScreenForHost();
+            showScreen('screen-ready');
+        } else if (guestConnection && guestConnection.open) {
+            guestConnection.send({
+                type: 'player_done',
+                senderId: actorId,
+                name: myName,
+                blocks: myBuiltBlocks
+            });
+            document.getElementById('ready-title').innerText = '完了送信済み';
+            document.getElementById('ready-status-text').innerText = 'ホストの【レディー】操作をお待ちください...';
+            setButtonLit('btn-ready-trigger', false);
+            showScreen('screen-ready');
         }
     }
 
-    function showJoinInput() {
-        document.getElementById('join-box').style.display = 'flex';
+    function updateReadyScreenForHost() {
+        if (!isHost) return;
+        const doneCount = completedPlayers.size;
+        document.getElementById('ready-title').innerText = '全員のブロック作成確認';
+        document.getElementById('ready-status-text').innerText =
+            `完了人数: ${doneCount} / ${maxPlayers}人（共通ブロック: ${sharedBlocks.length}個）`;
+        setButtonLit('btn-ready-trigger', doneCount >= maxPlayers);
     }
 
-    function updateLobbyDisplay() {
-        document.getElementById('key-display').innerText = `ルームキー: ${roomKey}`;
-        document.getElementById('lobby-status').innerText = 'ホスト: 参加待ち...';
-        document.getElementById('connection-count').innerText =
-            `接続: ${connections.length + 1} / ${maxPlayers}名（共通目標: ${totalBlockCount}種）`;
-        document.getElementById('lobby-blocks-info').innerText =
-            `現在の共通ブロック数: ${sharedBlocks.length}個`;
-        document.getElementById('btn-start-game').style.display = 'block';
+    function openTargetScoreDialogForAll() {
+        if (!isHost) return;
+        okPlayers = new Set();
+        myOkSent = false;
+        broadcastToPeers({ type: 'open_target_dialog' });
+        showTargetScoreDialog();
+    }
+
+    function showTargetScoreDialog() {
+        myOkSent = false;
+        document.getElementById('dialog-ok-status').innerText = '';
+        setButtonLit('btn-dialog-ok', true);
+        document.getElementById('target-dialog-overlay').classList.add('active');
+    }
+
+    function confirmTargetScoreOk() {
+        if (myOkSent) return;
+        myOkSent = true;
+        winTargetScore = parseInt(document.getElementById('dialog-win-score').value, 10) || 30;
+        setButtonLit('btn-dialog-ok', false);
+        document.getElementById('dialog-ok-status').innerText = '他のプレイヤーのOK待ち...';
+
+        const actorId = myId || ('local_' + myName);
+        if (isHost) {
+            okPlayers.add(actorId);
+            checkAllOkAndLaunchGo();
+        } else if (guestConnection && guestConnection.open) {
+            guestConnection.send({
+                type: 'player_ok',
+                senderId: actorId,
+                winTargetScore
+            });
+        }
+    }
+
+    function checkAllOkAndLaunchGo() {
+        if (!isHost) return;
+        if (okPlayers.size >= maxPlayers) {
+            const payload = {
+                type: 'launch_go',
+                mode: currentMode,
+                winTargetScore,
+                sharedBlocks
+            };
+            broadcastToPeers(payload);
+            startGameWithGoOverlay(currentMode, winTargetScore, sharedBlocks);
+        }
+    }
+
+    function startGameWithGoOverlay(mode, targetScore, blocksPool) {
+        currentMode = mode;
+        winTargetScore = targetScore;
+        if (Array.isArray(blocksPool) && blocksPool.length > 0) {
+            sharedBlocks = blocksPool;
+        }
+        document.getElementById('target-dialog-overlay').classList.remove('active');
+        showScreen('screen-game');
+
+        const goOverlay = document.getElementById('go-overlay');
+        goOverlay.classList.add('active');
+        setTimeout(() => {
+            goOverlay.classList.remove('active');
+        }, 1000);
     }
 
     function handlePeerMessage(data, senderConn) {
         if (!data || !data.type) return;
-        if (data.type === 'room_config') {
+
+        if (data.type === 'go_host_setup') {
+            showHostSetupScreen(false);
+        } else if (data.type === 'start_build') {
             totalBlockCount = data.totalBlockCount || 6;
-            maxPlayers = data.maxPlayers || 2;
-            playerIndex = data.playerIndex || 1;
+            currentMode = data.mode || 'normal';
             myAssignedBlockCount = data.assignedCount ?? 1;
             myBuiltBlocks = [];
             sharedBlocks = [];
+            myDoneSent = false;
+            myOkSent = false;
             showScreen('screen-builder');
-        } else if (data.type === 'blocks' && Array.isArray(data.blocks)) {
-            data.blocks.forEach(blk => {
-                if (!sharedBlocks.some(existing => JSON.stringify(existing) === JSON.stringify(blk))) {
-                    sharedBlocks.push(blk);
-                }
-            });
+        } else if (data.type === 'player_done') {
             if (isHost) {
-                updateLobbyDisplay();
-                connections.forEach(c => {
-                    if (c.open) c.send({ type: 'sync_blocks', blocks: sharedBlocks });
-                });
+                if (Array.isArray(data.blocks)) {
+                    data.blocks.forEach(blk => {
+                        if (!sharedBlocks.some(b => JSON.stringify(b) === JSON.stringify(blk))) {
+                            sharedBlocks.push(blk);
+                        }
+                    });
+                }
+                if (data.senderId) completedPlayers.add(data.senderId);
+                updateReadyScreenForHost();
             }
-        } else if (data.type === 'sync_blocks' && Array.isArray(data.blocks)) {
-            sharedBlocks = data.blocks;
-            document.getElementById('lobby-blocks-info').innerText =
-                `現在の共通ブロック数: ${sharedBlocks.length}個`;
-        } else if (data.type === 'start_mode') {
-            showScreen('screen-mode');
-        } else if (data.type === 'start_game') {
-            currentMode = data.mode || 'normal';
-            winTargetScore = data.winTargetScore || 30;
-            showScreen('screen-game');
+        } else if (data.type === 'open_target_dialog') {
+            showTargetScoreDialog();
+        } else if (data.type === 'player_ok') {
+            if (isHost) {
+                if (data.winTargetScore) winTargetScore = data.winTargetScore;
+                if (data.senderId) okPlayers.add(data.senderId);
+                checkAllOkAndLaunchGo();
+            }
+        } else if (data.type === 'launch_go') {
+            startGameWithGoOverlay(data.mode || currentMode, data.winTargetScore || winTargetScore, data.sharedBlocks);
         } else if (data.type === 'first_win') {
             triggerWinCelebration(data.winnerName, data.score, false);
             if (isHost) {
@@ -773,120 +1048,9 @@
             }
             renderResultList();
         } else if (data.type === 'rematch') {
-            currentMode = data.mode || currentMode;
-            winTargetScore = data.winTargetScore || winTargetScore;
             hideWinCelebration();
-            showScreen('screen-game');
+            startGameWithGoOverlay(data.mode || currentMode, data.winTargetScore || winTargetScore, sharedBlocks);
         }
-    }
-
-    function setupAsHost() {
-        readJsonBinSettings();
-        isHost = true;
-        remoteResults = {};
-        totalBlockCount = parseInt(document.getElementById('total-block-count').value, 10);
-        maxPlayers = parseInt(document.getElementById('player-count').value, 10);
-        const allocations = allocateBlockCounts(totalBlockCount, maxPlayers);
-        playerIndex = 0;
-        myAssignedBlockCount = allocations[0];
-        myBuiltBlocks = [];
-        sharedBlocks = [];
-        roomKey = Math.floor(1000 + Math.random() * 9000).toString();
-
-        try {
-            peer = new Peer('wing_block_' + roomKey);
-            peer.on('open', async () => {
-                await syncToJsonBin({ roomKey, totalBlockCount, maxPlayers, blocks: [] });
-                if (maxPlayers === 1) {
-                    showScreen('screen-builder');
-                } else {
-                    updateLobbyDisplay();
-                    showScreen('screen-lobby');
-                }
-            });
-            peer.on('error', () => {
-                alert('ルーム作成エラー。再試行してください。');
-            });
-            peer.on('connection', (c) => {
-                if (connections.length + 1 >= maxPlayers) {
-                    c.on('open', () => {
-                        c.send({ type: 'full' });
-                        setTimeout(() => c.close(), 200);
-                    });
-                    return;
-                }
-                const assignedIdx = connections.length + 1;
-                const guestCount = allocations[assignedIdx] ?? 1;
-                connections.push(c);
-                c.on('open', () => {
-                    c.send({
-                        type: 'room_config',
-                        totalBlockCount,
-                        maxPlayers,
-                        playerIndex: assignedIdx,
-                        assignedCount: guestCount
-                    });
-                });
-                updateLobbyDisplay();
-                c.on('data', (data) => handlePeerMessage(data, c));
-            });
-        } catch (e) {
-            alert('通信モジュールの初期化エラー');
-        }
-    }
-
-    function joinAsGuest() {
-        readJsonBinSettings();
-        isHost = false;
-        remoteResults = {};
-        const key = document.getElementById('room-key-input').value.trim();
-        if (!/^\d{4}$/.test(key)) {
-            alert('4桁のルームキーを入力してください');
-            return;
-        }
-        roomKey = key;
-
-        try {
-            peer = new Peer();
-            peer.on('open', () => {
-                guestConnection = peer.connect('wing_block_' + roomKey);
-                guestConnection.on('open', () => {
-                    document.getElementById('key-display').innerText = `ルーム ${roomKey} 接続成功！`;
-                    document.getElementById('lobby-status').innerText = 'ホストの設定受信中...';
-                    document.getElementById('btn-start-game').style.display = 'none';
-                    showScreen('screen-lobby');
-                });
-                guestConnection.on('data', (data) => {
-                    if (data && data.type === 'full') {
-                        alert('ルームが満員です。');
-                        location.reload();
-                        return;
-                    }
-                    handlePeerMessage(data, guestConnection);
-                });
-                guestConnection.on('error', () => {
-                    alert('ルームに接続できませんでした。');
-                });
-            });
-        } catch (e) {
-            alert('接続処理エラー');
-        }
-    }
-
-    function proceedToModeSelect() {
-        if (isHost) {
-            connections.forEach(c => {
-                if (c.open) c.send({ type: 'start_mode' });
-            });
-        }
-        showScreen('screen-mode');
-    }
-
-    function selectModeAndStart(mode) {
-        currentMode = mode;
-        winTargetScore = parseInt(document.getElementById('win-target-score').value, 10) || 30;
-        broadcastToPeers({ type: 'start_game', mode, winTargetScore });
-        showScreen('screen-game');
     }
 
     // --- 回転ユーティリティ（90° / 180° / 270° / 360°） ---
@@ -905,7 +1069,6 @@
         return { matrix: result, angle };
     }
 
-    // ノーマル・スピード共通のブロックプール
     function getCommonBlockPool() {
         if (sharedBlocks.length > 0) return sharedBlocks;
         if (myBuiltBlocks.length > 0) return myBuiltBlocks;
@@ -925,11 +1088,9 @@
     let currentIntervalMs = 750;
     let currentMode = 'normal';
 
-    // スピードモード用：待機所（4枠）＆指オフセットドラッグ状態
     let dockPieces = [null, null, null, null];
     let draggingDockIndex = -1;
     let dragMatrix = null;
-    // 指より少し上に浮かせるオフセット（px）
     const FINGER_LIFT_OFFSET = 58;
 
     function initGame() {
@@ -1098,15 +1259,11 @@
         }
     }
 
-    // --- スピードモード：待機所＆指オフセットドラッグ ---
     function createDockItem() {
         const pool = getCommonBlockPool();
         const raw = pool[Math.floor(Math.random() * pool.length)];
         const rotated = applyRandomAngle(raw);
-        return {
-            matrix: rotated.matrix,
-            angle: rotated.angle
-        };
+        return { matrix: rotated.matrix, angle: rotated.angle };
     }
 
     function initSpeedDock() {
@@ -1152,10 +1309,7 @@
     }
 
     function getVisualAnchor(clientX, clientY) {
-        return {
-            x: clientX,
-            y: clientY - FINGER_LIFT_OFFSET
-        };
+        return { x: clientX, y: clientY - FINGER_LIFT_OFFSET };
     }
 
     function startDraggingFromDock(idx, clientX, clientY) {
@@ -1185,8 +1339,7 @@
         ghost.style.left = anchor.x + 'px';
         ghost.style.top = anchor.y + 'px';
 
-        const pos = clientToBoardCell(clientX, clientY, dragMatrix);
-        drawGame(pos);
+        drawGame(clientToBoardCell(clientX, clientY, dragMatrix));
     }
 
     function moveDragGhost(clientX, clientY) {
@@ -1195,9 +1348,7 @@
         const ghost = document.getElementById('drag-ghost');
         ghost.style.left = anchor.x + 'px';
         ghost.style.top = anchor.y + 'px';
-
-        const pos = clientToBoardCell(clientX, clientY, dragMatrix);
-        drawGame(pos);
+        drawGame(clientToBoardCell(clientX, clientY, dragMatrix));
     }
 
     function clientToBoardCell(clientX, clientY, matrix) {
@@ -1313,7 +1464,6 @@
         }
     }
 
-    // --- 最速到達時：花火パーティクル＆WIN演出 ---
     function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
         if (gameFinished) return;
         gameFinished = true;
@@ -1336,9 +1486,7 @@
 
         remoteResults[winnerName] = { score: winnerScore, status: '🏆 WIN!!' };
         if (isLocalWinner) {
-            const payload = { type: 'result', name: myName || 'プレイヤー', score, status: '🏆 WIN!!' };
-            broadcastToPeers(payload);
-            syncToJsonBin({ roomKey, winner: payload, allResults: remoteResults });
+            broadcastToPeers({ type: 'result', name: myName || 'プレイヤー', score, status: '🏆 WIN!!' });
         }
 
         if (winActionTimer) clearTimeout(winActionTimer);
@@ -1423,7 +1571,7 @@
     function rematchGame() {
         hideWinCelebration();
         broadcastToPeers({ type: 'rematch', mode: currentMode, winTargetScore });
-        showScreen('screen-game');
+        startGameWithGoOverlay(currentMode, winTargetScore, sharedBlocks);
     }
 
     function finishFromWin() {
@@ -1444,7 +1592,7 @@
         ).join('');
     }
 
-    async function endGame(statusText) {
+    function endGame(statusText) {
         if (gameFinished) return;
         gameFinished = true;
 
@@ -1458,10 +1606,7 @@
 
         const playerLabel = myName || 'プレイヤー';
         remoteResults[playerLabel] = { score, status: statusText };
-
-        const payload = { type: 'result', name: playerLabel, score, status: statusText };
-        broadcastToPeers(payload);
-        await syncToJsonBin({ roomKey, result: payload, allResults: remoteResults });
+        broadcastToPeers({ type: 'result', name: playerLabel, score, status: statusText });
 
         showScreen('screen-result');
         document.getElementById('result-title').innerText = statusText;
