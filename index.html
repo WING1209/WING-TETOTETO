@@ -86,10 +86,10 @@
             background: #ff00ff; border-color: #ff88ff; box-shadow: 0 0 10px #ff00ff;
         }
 
-        /* ゲームプレイ画面：上部に大パズル画面（左にNEXT配置可能）、下部に待機所＆大きめGUI */
+        /* ゲームプレイ画面 */
         #screen-game {
             justify-content: flex-start;
-            padding: 6px 8px 8px 8px;
+            padding: 5px 8px 8px 8px;
             overflow: hidden;
             touch-action: none;
         }
@@ -103,6 +103,42 @@
             align-items: center;
             gap: 5px;
             touch-action: none;
+        }
+        .top-action-strip {
+            width: 100%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-height: 32px;
+        }
+        #surrender-btn {
+            margin: 0;
+            padding: 6px 12px;
+            width: auto;
+            max-width: none;
+            font-size: 12px;
+            font-weight: bold;
+            background: #4a1414;
+            border: 1px solid #ff6666;
+            color: #ffaaaa;
+            border-radius: 6px;
+            touch-action: none;
+        }
+        #surrender-btn:active {
+            background: #ff5555;
+            color: #000;
+        }
+        #top-status-banner {
+            flex: 1;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ffd700;
+            text-align: right;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .board-stage {
             flex: 1;
@@ -162,7 +198,7 @@
             touch-action: none;
         }
 
-        /* スピードモード用：下部ブロック待機所（4枠） */
+        /* スピードモード／スコアチャレンジ用：下部ブロック待機所（4枠） */
         #dock-area {
             display: none;
             width: 100%;
@@ -207,7 +243,7 @@
             pointer-events: none;
         }
 
-        /* 下部GUIパネル（ステータス＋大きめの押しやすい操作ボタン） */
+        /* 下部GUIパネル */
         .bottom-gui-panel {
             width: 100%;
             flex-shrink: 0;
@@ -474,7 +510,7 @@
     <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 2.6 (ズーム完全防止・シングル/マルチ導線)</div>
+        <div class="version">Ver 2.7 (自動判別＆降参・リタイア待機・50点加速)</div>
         <button onclick="showScreen('screen-play-type')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
     </div>
 
@@ -553,7 +589,7 @@
 
             <label class="note-text">ゲームモード</label>
             <select id="game-mode-select">
-                <option value="normal">ノーマルモード（全員終了まで対戦）</option>
+                <option value="normal">ノーマルモード（全員終了まで対戦・50点で高速化）</option>
                 <option value="speed">スピードモード（縦横揃えて消去・設定点先取）</option>
                 <option id="opt-score-challenge" value="challenge" style="display:none;">スコアチャレンジ（1人用・配置不可まで高得点）</option>
             </select>
@@ -586,9 +622,15 @@
         <button id="btn-ready-trigger" class="dim-btn" onclick="openTargetScoreDialogForAll()" disabled>レディー</button>
     </div>
 
-    <!-- ⑨ ゲームプレイ画面（上部：左NEXT＆大パズル画面 / 下部：待機所＆大きめGUI） -->
+    <!-- ⑨ ゲームプレイ画面 -->
     <div id="screen-game" class="screen">
         <div id="game-main-area">
+            <!-- 画面上部：降参ボタン＆状態表示 -->
+            <div class="top-action-strip">
+                <button type="button" id="surrender-btn" onclick="handleSurrenderTap()">降参</button>
+                <div id="top-status-banner"></div>
+            </div>
+
             <div class="board-stage">
                 <div id="left-next-box">
                     <div class="left-next-title">NEXT</div>
@@ -601,7 +643,7 @@
             </div>
 
             <div id="dock-area">
-                <div class="dock-label">ブロック待機所（縦または横1列で消去・タップしたままドラッグ設置）</div>
+                <div class="dock-label">ブロック待機所（縦または横1列で消去・配置不可で自動終了）</div>
                 <div id="dock-slots"></div>
             </div>
 
@@ -722,7 +764,7 @@
         lastTouchEndTime = now;
     }, { passive: false });
 
-    let playType = "multi"; // "single" | "multi"
+    let playType = "multi";
     let myName = "";
     let myId = "";
     let totalBlockCount = 6;
@@ -822,7 +864,6 @@
         myName = val;
 
         if (playType === 'single') {
-            // シングルプレイ：ホスト/ゲスト選択・人数決定・参加番号ロビーをスキップし、いきなりブロック種類数＆モード選択へ
             isHost = true;
             maxPlayers = 1;
             playerIndex = 0;
@@ -1281,19 +1322,19 @@
                     if (c !== senderConn && c.open) c.send(data);
                 });
             }
-        } else if (data.type === 'player_game_over') {
+        } else if (data.type === 'player_game_over' || data.type === 'player_retired') {
             if (data.playerId) {
                 finishedPlayersMap[data.playerId] = {
                     name: data.name || 'プレイヤー',
                     score: data.score ?? 0,
-                    status: data.status || 'ゲームオーバー'
+                    status: data.status || (data.type === 'player_retired' ? 'リタイア' : 'ゲームオーバー')
                 };
             }
             if (isHost) {
                 connections.forEach(c => {
                     if (c !== senderConn && c.open) c.send(data);
                 });
-                checkAllPlayersFinishedNormal();
+                checkAllPlayersFinishedInRoom();
             }
         } else if (data.type === 'all_finished_rankings') {
             finishedPlayersMap = data.rankingsMap || finishedPlayersMap;
@@ -1328,8 +1369,8 @@
         }
     }
 
-    function checkAllPlayersFinishedNormal() {
-        if (!isHost || currentMode !== 'normal') return;
+    function checkAllPlayersFinishedInRoom() {
+        if (!isHost) return;
         const finishedCount = Object.keys(finishedPlayersMap).length;
         if (finishedCount >= maxPlayers) {
             const payload = {
@@ -1423,7 +1464,7 @@
 
         showScreen('screen-result');
         document.getElementById('result-title').innerText =
-            currentMode === 'challenge' ? 'スコアチャレンジ結果' : '結果発表';
+            currentMode === 'challenge' ? 'スコアチャレンジ 得点発表' : '結果発表';
         const announceEl = document.getElementById('sequential-announcement');
         const listEl = document.getElementById('result-list');
         announceEl.innerText = '';
@@ -1464,8 +1505,9 @@
             listEl.innerHTML = ranked.map((item) => {
                 const isFirst = item.rank === 1;
                 const crownHtml = isFirst ? `<span class="crown-mark">👑</span>` : '';
+                const subTag = item.status ? ` [${item.status}]` : '';
                 return `<div class="result-item ${isFirst ? 'rank-1' : ''}">
-                    ${crownHtml}<span>${item.rank}位: <strong>${item.name}</strong> — ${item.score}点</span>
+                    ${crownHtml}<span>${item.rank}位: <strong>${item.name}</strong> — ${item.score}点${subTag}</span>
                 </div>`;
             }).join('');
 
@@ -1588,6 +1630,14 @@
     let dragMatrix = null;
     const FINGER_LIFT_OFFSET = 58;
 
+    // ノーマルモード：得点に応じた落下間隔計算（50点でしっかり加速するカーブ）
+    function calcNormalIntervalMs(currentScore) {
+        const capped = Math.max(0, currentScore);
+        // 0点: 750ms -> 50点: 220ms（10点ごとに約106ms短縮し、50点以降も130ms下限まで滑らかに加速）
+        const interval = 750 - capped * 10.6;
+        return Math.max(130, Math.round(interval));
+    }
+
     function initGame() {
         gameFinished = false;
         waitingForOthersOver = false;
@@ -1595,6 +1645,7 @@
         hideWinCelebration();
 
         document.getElementById('hud-name').innerText = myName || 'プレイヤー';
+        document.getElementById('top-status-banner').innerText = '';
         canvas = document.getElementById('game-canvas');
         ctx = canvas.getContext('2d');
         nextCanvas = document.getElementById('next-canvas');
@@ -1612,12 +1663,12 @@
             boardWidth = 10;
             boardHeight = 20;
             const usableWidth = Math.max(180, containerWidth - 112);
-            const usableHeight = Math.max(260, containerHeight - 130);
+            const usableHeight = Math.max(240, containerHeight - 165);
             const maxByHeight = Math.floor(usableHeight / boardHeight);
             const maxByWidth = Math.floor(usableWidth / boardWidth);
             blockSize = Math.max(16, Math.min(34, maxByHeight, maxByWidth));
 
-            currentIntervalMs = 750;
+            currentIntervalMs = calcNormalIntervalMs(0);
             document.getElementById('hud-target').innerText = '全員終了まで';
             document.getElementById('hud-info').innerText = 'ノーマル';
             leftNextBox.classList.add('active');
@@ -1628,7 +1679,7 @@
             boardWidth = 10;
             boardHeight = 10;
             const usableWidth = Math.max(200, containerWidth - 36);
-            const usableHeight = Math.max(200, containerHeight - 220);
+            const usableHeight = Math.max(190, containerHeight - 255);
             const maxByHeight = Math.floor(usableHeight / boardHeight);
             const maxByWidth = Math.floor(usableWidth / boardWidth);
             blockSize = Math.max(22, Math.min(44, maxByHeight, maxByWidth));
@@ -1667,9 +1718,7 @@
         } else {
             initSpeedDock();
             drawGame();
-            if (!hasAnyPlaceableDockPiece()) {
-                handlePlacementGameOver();
-            }
+            evaluatePlacementAvailabilityOrEnd();
         }
     }
 
@@ -1713,7 +1762,7 @@
 
     function resetGameInterval(ms) {
         if (gameInterval) clearInterval(gameInterval);
-        currentIntervalMs = Math.max(180, ms);
+        currentIntervalMs = Math.max(130, ms);
         gameInterval = setInterval(updateNormalGame, currentIntervalMs);
     }
 
@@ -1811,10 +1860,10 @@
             waitingForOthersOver = false;
             showFinalResultScreen(finishedPlayersMap);
         } else if (isHost) {
-            checkAllPlayersFinishedNormal();
+            checkAllPlayersFinishedInRoom();
         } else if (guestConnection && guestConnection.open) {
             guestConnection.send(payload);
-            document.getElementById('hud-info').innerText = '他プレイヤー終了待ち';
+            document.getElementById('top-status-banner').innerText = '他プレイヤー終了待ち...';
         } else {
             showFinalResultScreen(finishedPlayersMap);
         }
@@ -1860,7 +1909,7 @@
                 slot.appendChild(pCanvas);
 
                 slot.addEventListener('touchstart', (e) => {
-                    if (gameFinished || !isPlacementMode(currentMode) || !e.touches.length) return;
+                    if (gameFinished || waitingForOthersOver || !isPlacementMode(currentMode) || !e.touches.length) return;
                     e.preventDefault();
                     startDraggingFromDock(idx, e.touches[0].clientX, e.touches[0].clientY);
                 }, { passive: false });
@@ -1944,12 +1993,12 @@
                 dragMatrix = null;
                 return;
             }
-            if (!hasAnyPlaceableDockPiece()) {
-                handlePlacementGameOver();
-                draggingDockIndex = -1;
-                dragMatrix = null;
-                return;
-            }
+            draggingDockIndex = -1;
+            dragMatrix = null;
+            renderDockSlots();
+            drawGame();
+            evaluatePlacementAvailabilityOrEnd();
+            return;
         }
 
         draggingDockIndex = -1;
@@ -1958,16 +2007,93 @@
         drawGame();
     }
 
+    // 待機所のブロックが1つでも置ける場所があるか自動判別
     function hasAnyPlaceableDockPiece() {
+        if (!Array.isArray(board) || board.length === 0) return true;
+        let hasValidPiece = false;
         for (const item of dockPieces) {
-            if (!item) continue;
+            if (!item || !Array.isArray(item.matrix) || item.matrix.length === 0) continue;
+            hasValidPiece = true;
             for (let r = 0; r < boardHeight; r++) {
                 for (let c = 0; c < boardWidth; c++) {
                     if (!checkCollision(c, r, item.matrix)) return true;
                 }
             }
         }
-        return false;
+        return !hasValidPiece;
+    }
+
+    function evaluatePlacementAvailabilityOrEnd() {
+        if (gameFinished || waitingForOthersOver || !isPlacementMode(currentMode)) return;
+        if (!hasAnyPlaceableDockPiece()) {
+            handleNoPlaceableBlockEnd(false);
+        }
+    }
+
+    // 画面上部の「降参」ボタンタップ時の処理
+    function handleSurrenderTap() {
+        if (gameFinished || waitingForOthersOver) return;
+        if (currentMode === 'normal') {
+            handleMyNormalGameOver();
+        } else {
+            handleNoPlaceableBlockEnd(true);
+        }
+    }
+
+    // 配置不可または降参時の終了処理（スピードモードはリタイア表示＋他プレイヤー終了待機、スコアチャレンジは得点発表へ）
+    function handleNoPlaceableBlockEnd(isSurrender) {
+        if (gameFinished || waitingForOthersOver || myFinishedSent) return;
+        myFinishedSent = true;
+
+        document.getElementById('drag-ghost').style.display = 'none';
+        draggingDockIndex = -1;
+        dragMatrix = null;
+
+        const actorId = myId || ('local_' + myName);
+
+        if (currentMode === 'challenge') {
+            gameFinished = true;
+            finishedPlayersMap[actorId] = {
+                name: myName || 'プレイヤー',
+                score,
+                status: isSurrender ? '降参終了' : 'スコアチャレンジ終了'
+            };
+            showFinalResultScreen(finishedPlayersMap);
+            return;
+        }
+
+        // スピードモード：勝利条件到達前に置けなくなった場合は「リタイア」表示＋他プレイヤー終了まで待機
+        waitingForOthersOver = true;
+        const statusLabel = isSurrender ? 'リタイア（降参）' : 'リタイア';
+        document.getElementById('hud-info').innerText = 'リタイア';
+        document.getElementById('top-status-banner').innerText = 'リタイア（他プレイヤー終了待ち）';
+
+        const record = {
+            name: myName || 'プレイヤー',
+            score,
+            status: statusLabel
+        };
+        finishedPlayersMap[actorId] = record;
+
+        const payload = {
+            type: 'player_retired',
+            playerId: actorId,
+            ...record
+        };
+
+        if (playType === 'single' || maxPlayers === 1) {
+            gameFinished = true;
+            waitingForOthersOver = false;
+            showFinalResultScreen(finishedPlayersMap);
+        } else if (isHost) {
+            checkAllPlayersFinishedInRoom();
+        } else if (guestConnection && guestConnection.open) {
+            guestConnection.send(payload);
+        } else {
+            gameFinished = true;
+            waitingForOthersOver = false;
+            showFinalResultScreen(finishedPlayersMap);
+        }
     }
 
     function checkCollision(px, py, matrix) {
@@ -2011,7 +2137,7 @@
         if (lines > 0) {
             score += lines * 10;
             document.getElementById('hud-score').innerText = `${score}点`;
-            resetGameInterval(750 - score * 12);
+            resetGameInterval(calcNormalIntervalMs(score));
         }
     }
 
@@ -2056,6 +2182,7 @@
     function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
         if (gameFinished) return;
         gameFinished = true;
+        waitingForOthersOver = false;
 
         if (gameInterval) {
             clearInterval(gameInterval);
@@ -2166,22 +2293,6 @@
     function finishFromWin() {
         hideWinCelebration();
         location.reload();
-    }
-
-    function handlePlacementGameOver() {
-        if (gameFinished) return;
-        gameFinished = true;
-        document.getElementById('drag-ghost').style.display = 'none';
-        draggingDockIndex = -1;
-        dragMatrix = null;
-
-        const actorId = myId || ('local_' + myName);
-        finishedPlayersMap[actorId] = {
-            name: myName || 'プレイヤー',
-            score,
-            status: currentMode === 'challenge' ? 'スコアチャレンジ終了' : '配置不可ゲームオーバー'
-        };
-        showFinalResultScreen(finishedPlayersMap);
     }
 
     function drawGame(ghostPos = null) {
