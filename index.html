@@ -71,6 +71,23 @@
         input, select { background: #222; cursor: text; }
         select { cursor: pointer; }
 
+        /* 音声トグルボタン */
+        #audio-toggle-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 50;
+            width: auto;
+            max-width: none;
+            margin: 0;
+            padding: 5px 10px;
+            font-size: 11px;
+            background: rgba(20, 20, 32, 0.88);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            border-radius: 999px;
+        }
+
         .grid-3x3 {
             display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px);
             gap: 5px; margin: 10px 0;
@@ -112,6 +129,7 @@
             justify-content: space-between;
             gap: 8px;
             min-height: 32px;
+            padding-right: 78px;
         }
         #surrender-btn {
             margin: 0;
@@ -547,60 +565,62 @@
 <body>
 
 <div id="container">
+    <button type="button" id="audio-toggle-btn" onclick="toggleAudioMute()">🔊 SOUND ON</button>
+
     <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 2.9 (スコアボード設定非表示ロック)</div>
-        <button onclick="showScreen('screen-play-type')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
-        <button onclick="openScoreboardScreen('screen-title')" style="background:#152836; border-color:#00ffff; color:#00ffff;">🏆 共通スコアボード（上位10）</button>
+        <div class="version">Ver 3.0 (BGM6曲ランダム・SE8種対応)</div>
+        <button onclick="playSe('decide'); showScreen('screen-play-type')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
+        <button onclick="playSe('decide'); openScoreboardScreen('screen-title')" style="background:#152836; border-color:#00ffff; color:#00ffff;">🏆 共通スコアボード（上位10）</button>
     </div>
 
     <!-- ①-B シングルプレイ／マルチプレイ選択画面 -->
     <div id="screen-play-type" class="screen">
         <h1>プレイ人数タイプ選択</h1>
         <p class="note-text">シングルプレイまたはマルチプレイを選んでください</p>
-        <button onclick="selectPlayType('single')" style="background:#004466; border-color:#00ffff; font-weight:bold;">シングルプレイ（1人）</button>
-        <button onclick="selectPlayType('multi')" style="background:#440044; border-color:#ff00ff; font-weight:bold;">マルチプレイ（通信対戦）</button>
-        <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
+        <button onclick="playSe('decide'); selectPlayType('single')" style="background:#004466; border-color:#00ffff; font-weight:bold;">シングルプレイ（1人）</button>
+        <button onclick="playSe('decide'); selectPlayType('multi')" style="background:#440044; border-color:#ff00ff; font-weight:bold;">マルチプレイ（通信対戦）</button>
+        <button onclick="playSe('cursor'); showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
     <!-- ② 名前入力画面 -->
     <div id="screen-name" class="screen">
         <h1>プレイヤー名入力</h1>
         <p class="note-text">ひらがな6文字以内で入力してください</p>
-        <input type="text" id="player-name-input" placeholder="例: やまだ" maxlength="6">
+        <input type="text" id="player-name-input" placeholder="例: やまだ" maxlength="6" oninput="playSe('cursor')">
         <button onclick="submitName()">次へ</button>
-        <button onclick="showScreen('screen-play-type')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
+        <button onclick="playSe('cursor'); showScreen('screen-play-type')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
     <!-- ③ ホストまたはゲスト選択（マルチプレイ時のみ使用） -->
     <div id="screen-role" class="screen">
         <h1>モード選択</h1>
         <p class="note-text">ホストまたはゲストを選んでください</p>
-        <button onclick="showScreen('screen-host-count')" style="background:#004444;">ホスト</button>
-        <button onclick="showGuestJoinBox()" style="background:#440044;">ゲスト</button>
+        <button onclick="playSe('decide'); showScreen('screen-host-count')" style="background:#004444;">ホスト</button>
+        <button onclick="playSe('decide'); showGuestJoinBox()" style="background:#440044;">ゲスト</button>
 
         <div id="guest-join-box" style="display:none; width:100%; flex-direction:column; align-items:center; margin-top:8px;">
-            <input type="text" id="room-key-input" placeholder="4桁の参加番号" maxlength="4" inputmode="numeric">
+            <input type="text" id="room-key-input" placeholder="4桁の参加番号" maxlength="4" inputmode="numeric" oninput="playSe('cursor')">
             <button onclick="joinAsGuest()" style="background:#005500;">参加する</button>
         </div>
 
-        <button onclick="showScreen('screen-name')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
+        <button onclick="playSe('cursor'); showScreen('screen-name')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
     <!-- ④ ホスト：何人で遊ぶか決定 -->
     <div id="screen-host-count" class="screen">
         <h1>プレイ人数決定</h1>
         <p class="note-text">何人で遊ぶか決めてください</p>
-        <select id="player-count" onchange="syncGameModeOptionsForPlayers()">
+        <select id="player-count" onchange="playSe('cursor'); syncGameModeOptionsForPlayers()">
             <option value="1">1人</option>
             <option value="2" selected>2人</option>
             <option value="3">3人</option>
             <option value="4">4人</option>
             <option value="5">5人</option>
         </select>
-        <button onclick="confirmHostCountAndCreateRoom()" style="background:#005555;">決定</button>
-        <button onclick="showScreen('screen-role')" style="border-color:#ff5555; color:#ff5555; margin-top:12px;">もどる</button>
+        <button onclick="playSe('decide'); confirmHostCountAndCreateRoom()" style="background:#005555;">決定</button>
+        <button onclick="playSe('cursor'); showScreen('screen-role')" style="border-color:#ff5555; color:#ff5555; margin-top:12px;">もどる</button>
     </div>
 
     <!-- ⑤ 参加番号表示・接続待ち・【次に】ボタン -->
@@ -609,7 +629,7 @@
         <h3 id="lobby-status">接続待ち</h3>
         <p id="connection-count" style="font-size:14px; color:#ccc; margin:6px 0;">0 / 0人</p>
         <button id="btn-lobby-next" class="dim-btn" onclick="onHostLobbyNext()" disabled>次に</button>
-        <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:16px;">最初に戻る</button>
+        <button onclick="playSe('cursor'); location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:16px;">最初に戻る</button>
     </div>
 
     <!-- ⑥ ブロック種類数＆ゲームモード選択 -->
@@ -618,7 +638,7 @@
             <h1>ブロック種類数＆モード</h1>
 
             <label class="note-text">ブロックの種類数</label>
-            <select id="total-block-count">
+            <select id="total-block-count" onchange="playSe('cursor')">
                 <option value="2">2種類</option>
                 <option value="3">3種類</option>
                 <option value="4">4種類</option>
@@ -629,13 +649,13 @@
             </select>
 
             <label class="note-text">ゲームモード</label>
-            <select id="game-mode-select">
+            <select id="game-mode-select" onchange="playSe('cursor')">
                 <option value="normal">ノーマルモード（50点ごとに落下速度UP）</option>
                 <option value="speed">スピードモード（縦横揃えて消去・設定点先取）</option>
                 <option id="opt-score-challenge" value="challenge" style="display:none;">スコアチャレンジ（1人用・配置不可まで高得点）</option>
             </select>
 
-            <button onclick="distributeBlocksAndStartBuild()" style="background:#006644; border-color:#00ff88; font-weight:bold;">ブロック作成へ進む</button>
+            <button onclick="playSe('decide'); distributeBlocksAndStartBuild()" style="background:#006644; border-color:#00ff88; font-weight:bold;">ブロック作成へ進む</button>
         </div>
 
         <div id="please-wait-box" style="display:none; flex-direction:column; align-items:center; text-align:center;">
@@ -727,7 +747,6 @@
             <div id="sequential-announcement"></div>
             <div id="result-list" style="width:92%; max-height:170px; overflow-y:auto; margin:6px 0 8px 0; background:rgba(24,24,32,0.92); border:1px solid #555; border-radius:6px; padding:6px; font-size:13px; text-align:center;"></div>
 
-            <!-- 上位10位ランクイン時の自由名前入力＆登録 -->
             <div id="rankin-entry-box" class="rankin-entry-box">
                 <div id="rankin-message" style="font-size:13px; font-weight:bold; color:#ffd700;">🎉 共通スコアボード 上位10位ランクイン！</div>
                 <p class="note-text" style="color:#ddd;">ランキングに載せる名前を自由に再入力できます</p>
@@ -736,11 +755,11 @@
                 <div id="rankin-submit-status" class="note-text" style="color:#00ff88;"></div>
             </div>
 
-            <button onclick="openScoreboardScreen('screen-result')" style="background:#1a293a; border-color:#00ffff; padding:9px 14px; font-size:13px;">🏆 共通スコアボードを見る</button>
+            <button onclick="playSe('decide'); openScoreboardScreen('screen-result')" style="background:#1a293a; border-color:#00ffff; padding:9px 14px; font-size:13px;">🏆 共通スコアボードを見る</button>
 
             <div id="host-result-actions" style="display:none; width:100%; flex-direction:column; align-items:center;">
-                <button onclick="hostChooseRematch()" style="background:#006600; border-color:#00ff00; font-weight:bold;">再戦</button>
-                <button onclick="hostChooseEnd()" style="background:#551111; border-color:#ff5555;">終了</button>
+                <button onclick="playSe('decide'); hostChooseRematch()" style="background:#006600; border-color:#00ff00; font-weight:bold;">再戦</button>
+                <button onclick="playSe('gameOver'); hostChooseEnd()" style="background:#551111; border-color:#ff5555;">終了</button>
             </div>
 
             <div id="guest-result-actions" style="display:none; width:100%; flex-direction:column; align-items:center;">
@@ -750,15 +769,15 @@
         </div>
     </div>
 
-    <!-- ⑪ 共通スコアボード画面（上位10件・連携設定UIは非表示） -->
+    <!-- ⑪ 共通スコアボード画面（上位10件） -->
     <div id="screen-scoreboard" class="screen">
         <h1>🏆 共通スコアボード（上位10）</h1>
         <p id="scoreboard-source-note" class="note-text" style="color:#00ff88;"></p>
 
         <div id="scoreboard-list" class="scoreboard-list"></div>
 
-        <button onclick="refreshScoreboardView()" style="background:#004444; border-color:#00ffff; padding:9px 14px; font-size:13px;">更新する</button>
-        <button onclick="closeScoreboardScreen()" style="border-color:#ff5555; color:#ff5555; margin-top:10px;">もどる</button>
+        <button onclick="playSe('decide'); refreshScoreboardView()" style="background:#004444; border-color:#00ffff; padding:9px 14px; font-size:13px;">更新する</button>
+        <button onclick="playSe('cursor'); closeScoreboardScreen()" style="border-color:#ff5555; color:#ff5555; margin-top:10px;">もどる</button>
     </div>
 </div>
 
@@ -768,7 +787,7 @@
         <h3 id="dialog-title" style="margin-top:0;">勝利条件を設定</h3>
         <div id="host-target-picker" style="display:none; flex-direction:column; align-items:center;">
             <p class="note-text">ホストが勝利点数を決めてOKを押してください</p>
-            <select id="dialog-win-score" style="width:100%;">
+            <select id="dialog-win-score" style="width:100%;" onchange="playSe('cursor')">
                 <option value="20">20点</option>
                 <option value="30" selected>30点</option>
                 <option value="50">50点</option>
@@ -801,13 +820,201 @@
         <div class="win-title-text">WIN!!</div>
     </div>
     <div id="win-actions">
-        <button onclick="rematchGame()" style="background:#007700; border-color:#00ff00; font-weight:bold;">再戦する</button>
-        <button onclick="finishFromWin()" style="background:#441111; border-color:#ff5555;">終了する</button>
+        <button onclick="playSe('decide'); rematchGame()" style="background:#007700; border-color:#00ff00; font-weight:bold;">再戦する</button>
+        <button onclick="playSe('gameOver'); finishFromWin()" style="background:#441111; border-color:#ff5555;">終了する</button>
     </div>
 </div>
 
 <script>
-    // --- JSONBin 固定設定（画面からは変更不可） ---
+    // =========================================================================
+    // BGM（6種類・MP3またはWAV形式）＆ 効果音（8種類）設定
+    // =========================================================================
+    // タイトル画面・ゲームプレイ画面などでランダム再生するBGMリスト（最大8曲・.mp3 / .wav）
+    const BGM_TRACKS = [
+　　　  // 例: "./audio/bgm8.mp3",
+        // 例: "./audio/bgm7.mp3",
+        // 例: "./audio/bgm1.mp3",
+        // 例: "./audio/bgm2.mp3",
+        // 例: "./audio/bgm3.mp3",
+        // 例: "./audio/bgm4.mp3",
+        // 例: "./audio/bgm5.mp3",
+        // 例: "./audio/bgm6.mp3",
+    ].slice(0, 8);
+
+    // 効果音ファイル登録（.mp3 または .wav を指定可能。未指定時はWebAudio内蔵SEが鳴ります）
+    const SE_FILES = {
+        decide: "se1.mp3",          // ☆決定音
+        cursor: "se3.mp3",          // ☆カーソル移動音
+        gameStart: "se2.mp3",       // ☆ゲームスタート音
+        gameOver: "se4.mp3",        // ☆ゲーム終了音
+        blockClear: "se5.mp3",      // ☆ブロック消えるときの音
+        speedUp: "se6.mp3",         // ☆ノーマルモードのスピードアップ音
+        resultAnnounce: "se7.mp3",  // ☆マルチプレイ時の結果発表音
+        win: "se8.mp3"              // ☆勝利発表音
+    };
+
+    let audioMuted = false;
+    let bgmAudioEl = null;
+    let lastBgmIndex = -1;
+    let webAudioCtx = null;
+
+    function ensureWebAudioContext() {
+        if (audioMuted) return null;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        if (!webAudioCtx) {
+            webAudioCtx = new AudioCtx();
+        }
+        if (webAudioCtx.state === 'suspended') {
+            webAudioCtx.resume().catch(() => {});
+        }
+        return webAudioCtx;
+    }
+
+    function pickRandomBgmSrc() {
+        const validTracks = BGM_TRACKS.filter(src => typeof src === 'string' && src.trim() !== '');
+        if (!validTracks.length) return null;
+        if (validTracks.length === 1) return validTracks[0];
+        let idx = Math.floor(Math.random() * validTracks.length);
+        if (idx === lastBgmIndex) {
+            idx = (idx + 1) % validTracks.length;
+        }
+        lastBgmIndex = idx;
+        return validTracks[idx];
+    }
+
+    function playRandomBgm(forceNew = false) {
+        if (audioMuted) return;
+        const src = pickRandomBgmSrc();
+        if (!src) return;
+
+        if (!bgmAudioEl) {
+            bgmAudioEl = new Audio();
+            bgmAudioEl.loop = true;
+            bgmAudioEl.volume = 0.35;
+            bgmAudioEl.addEventListener('error', () => {
+                // ファイル未配置・非対応時は無音で安全にスキップ
+            });
+        }
+
+        if (forceNew || bgmAudioEl.src !== new URL(src, window.location.href).href) {
+            bgmAudioEl.src = src;
+        }
+        bgmAudioEl.play().catch(() => {
+            // ユーザー操作前の自動再生制限時は最初の操作後に再試行される
+        });
+    }
+
+    function stopBgm() {
+        if (bgmAudioEl) {
+            bgmAudioEl.pause();
+        }
+    }
+
+    function toggleAudioMute() {
+        audioMuted = !audioMuted;
+        const btn = document.getElementById('audio-toggle-btn');
+        if (btn) {
+            btn.innerText = audioMuted ? '🔇 SOUND OFF' : '🔊 SOUND ON';
+            btn.style.borderColor = audioMuted ? '#ff6666' : '#00ff88';
+            btn.style.color = audioMuted ? '#ff6666' : '#00ff88';
+        }
+        if (audioMuted) {
+            stopBgm();
+        } else {
+            ensureWebAudioContext();
+            playRandomBgm(false);
+            playSe('decide');
+        }
+    }
+
+    function playTone(ctx, freq, duration, type = 'sine', delay = 0, gainPeak = 0.14) {
+        const now = ctx.currentTime + delay;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(gainPeak, now + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+    }
+
+    function playBuiltInSe(key) {
+        const ctx = ensureWebAudioContext();
+        if (!ctx) return;
+
+        switch (key) {
+            case 'decide':
+                playTone(ctx, 660, 0.09, 'triangle', 0, 0.15);
+                playTone(ctx, 990, 0.12, 'triangle', 0.06, 0.15);
+                break;
+            case 'cursor':
+                playTone(ctx, 520, 0.05, 'sine', 0, 0.09);
+                break;
+            case 'gameStart':
+                playTone(ctx, 440, 0.10, 'square', 0, 0.11);
+                playTone(ctx, 554.37, 0.10, 'square', 0.09, 0.11);
+                playTone(ctx, 659.25, 0.18, 'square', 0.18, 0.13);
+                break;
+            case 'gameOver':
+                playTone(ctx, 392, 0.16, 'sawtooth', 0, 0.12);
+                playTone(ctx, 349.23, 0.16, 'sawtooth', 0.15, 0.12);
+                playTone(ctx, 261.63, 0.32, 'sawtooth', 0.30, 0.14);
+                break;
+            case 'blockClear':
+                playTone(ctx, 587.33, 0.08, 'triangle', 0, 0.15);
+                playTone(ctx, 783.99, 0.08, 'triangle', 0.06, 0.15);
+                playTone(ctx, 1046.5, 0.14, 'triangle', 0.12, 0.16);
+                break;
+            case 'speedUp':
+                playTone(ctx, 523.25, 0.07, 'sawtooth', 0, 0.12);
+                playTone(ctx, 659.25, 0.07, 'sawtooth', 0.06, 0.12);
+                playTone(ctx, 783.99, 0.07, 'sawtooth', 0.12, 0.12);
+                playTone(ctx, 1046.5, 0.16, 'sawtooth', 0.18, 0.14);
+                break;
+            case 'resultAnnounce':
+                playTone(ctx, 659.25, 0.10, 'triangle', 0, 0.14);
+                playTone(ctx, 880, 0.18, 'triangle', 0.09, 0.15);
+                break;
+            case 'win':
+                playTone(ctx, 523.25, 0.11, 'triangle', 0, 0.16);
+                playTone(ctx, 659.25, 0.11, 'triangle', 0.10, 0.16);
+                playTone(ctx, 783.99, 0.11, 'triangle', 0.20, 0.16);
+                playTone(ctx, 1046.5, 0.32, 'triangle', 0.30, 0.18);
+                break;
+        }
+    }
+
+    function playSe(key) {
+        if (audioMuted) return;
+        const customSrc = SE_FILES[key];
+        if (typeof customSrc === 'string' && customSrc.trim() !== '') {
+            const seAudio = new Audio(customSrc.trim());
+            seAudio.volume = 0.65;
+            seAudio.play().catch(() => {
+                playBuiltInSe(key);
+            });
+            return;
+        }
+        playBuiltInSe(key);
+    }
+
+    document.addEventListener('pointerdown', () => {
+        if (!audioMuted) {
+            ensureWebAudioContext();
+            if (!bgmAudioEl || bgmAudioEl.paused) {
+                playRandomBgm(false);
+            }
+        }
+    }, { once: false });
+
+    // =========================================================================
+    // JSONBin 固定設定（画面からは変更不可）
+    // =========================================================================
     const DEFAULT_JSONBIN_ID = "";
     const DEFAULT_JSONBIN_MASTER_KEY = "";
     const LOCAL_SCOREBOARD_KEY = "wing_block_local_scoreboard_v1";
@@ -959,6 +1166,7 @@
 
     async function submitScoreToGlobalBoard() {
         if (rankinSubmittedThisRound) return;
+        playSe('decide');
         const input = document.getElementById("rankin-free-name-input");
         const status = document.getElementById("rankin-submit-status");
         const btn = document.getElementById("btn-submit-scoreboard");
@@ -1079,6 +1287,13 @@
         }
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
+
+        if (screenId === 'screen-title' || screenId === 'screen-game') {
+            playRandomBgm(true);
+        } else if (!audioMuted && (!bgmAudioEl || bgmAudioEl.paused)) {
+            playRandomBgm(false);
+        }
+
         if (screenId === 'screen-host-count') syncGameModeOptionsForPlayers();
         else if (screenId === 'screen-host-setup') {
             document.getElementById('host-setup-controls').style.display = 'flex';
@@ -1092,9 +1307,11 @@
     function submitName() {
         const val = document.getElementById('player-name-input').value.trim();
         if (!val.match(/^[ぁ-んー]{1,6}$/)) {
+            playSe('cursor');
             alert('ひらがな1〜6文字で入力してください');
             return;
         }
+        playSe('decide');
         myName = val;
 
         if (playType === 'single') {
@@ -1208,9 +1425,11 @@
         isHost = false;
         const key = document.getElementById('room-key-input').value.trim();
         if (!/^\d{4}$/.test(key)) {
+            playSe('cursor');
             alert('4桁の参加番号を入力してください');
             return;
         }
+        playSe('decide');
         roomKey = key;
         myDoneSent = false;
         myOkSent = false;
@@ -1249,6 +1468,7 @@
 
     function onHostLobbyNext() {
         if (!isHost) return;
+        playSe('decide');
         broadcastToPeers({ type: 'go_host_setup' });
         showHostSetupScreen(true);
     }
@@ -1302,6 +1522,7 @@
     }
 
     function toggleBuilderSize() {
+        playSe('cursor');
         currentBuilderSize = (currentBuilderSize === 3) ? 6 : 3;
         document.getElementById('btn-toggle-size').innerText = `モード切替: ${currentBuilderSize === 3 ? '3×3' : '3×6'}`;
         renderBuilderGrid();
@@ -1328,6 +1549,7 @@
                 cell.className = 'cell-box' + (builderGrid[r][c] === 1 ? ' active' : '');
                 let cr = r, cc = c;
                 cell.onclick = () => {
+                    playSe('cursor');
                     builderGrid[cr][cc] = builderGrid[cr][cc] === 1 ? 0 : 1;
                     renderBuilderGrid();
                 };
@@ -1339,6 +1561,7 @@
 
     function addCurrentBlockToMine() {
         if (myBuiltBlocks.length >= myAssignedBlockCount) {
+            playSe('cursor');
             alert('必要個数は作成済みです。「完了」を押してください。');
             return;
         }
@@ -1359,10 +1582,12 @@
         }
 
         if (!hasCell) {
+            playSe('cursor');
             alert('1つ以上のマスをタップしてください');
             return;
         }
 
+        playSe('decide');
         let pieceMatrix = [];
         for (let r = minR; r <= maxR; r++) {
             let rowArr = [];
@@ -1384,6 +1609,7 @@
 
     function submitMyBlocksDone() {
         if (myBuiltBlocks.length < myAssignedBlockCount || myDoneSent) return;
+        playSe('decide');
         myDoneSent = true;
         const actorId = myId || ('local_' + myName);
 
@@ -1416,6 +1642,7 @@
 
     function openTargetScoreDialogForAll() {
         if (!isHost) return;
+        playSe('decide');
         okPlayers = new Set();
         myOkSent = false;
         if (currentMode === 'speed') {
@@ -1451,6 +1678,7 @@
 
     function confirmTargetScoreOk() {
         if (myOkSent) return;
+        playSe('decide');
         myOkSent = true;
         setButtonLit('btn-dialog-ok', false);
         document.getElementById('dialog-ok-status').innerText = '他のプレイヤーのOK待ち...';
@@ -1494,6 +1722,7 @@
         }
         document.getElementById('target-dialog-overlay').classList.remove('active');
         showScreen('screen-game');
+        playSe('gameStart');
 
         const goOverlay = document.getElementById('go-overlay');
         goOverlay.classList.add('active');
@@ -1732,12 +1961,14 @@
 
         orderToAnnounce.forEach((item, i) => {
             const tId = setTimeout(() => {
+                playSe('resultAnnounce');
                 announceEl.innerText = `${item.rank}位：${item.name}（${item.score}点）`;
             }, i * stepMs);
             announceTimers.push(tId);
         });
 
         const summaryTimer = setTimeout(() => {
+            playSe('resultAnnounce');
             announceEl.innerText = '👑 最終ランキング一覧 👑';
             listEl.innerHTML = ranked.map((item) => {
                 const isFirst = item.rank === 1;
@@ -1783,6 +2014,7 @@
     function guestTapRematchReady() {
         const btn = document.getElementById('btn-guest-rematch-ready');
         if (!btn || btn.disabled) return;
+        playSe('decide');
         setButtonLit('btn-guest-rematch-ready', false);
         document.getElementById('guest-result-wait-msg').innerText = 'レディー送信済み！全員の準備待ち...';
 
@@ -2039,6 +2271,7 @@
         if (gameFinished || waitingForOthersOver || currentMode !== 'normal' || !currentPiece) return;
         const nx = currentPiece.x + dir;
         if (!checkCollision(nx, currentPiece.y, currentPiece.matrix)) {
+            playSe('cursor');
             currentPiece.x = nx;
             drawGame();
         }
@@ -2046,6 +2279,7 @@
 
     function hardDrop() {
         if (gameFinished || waitingForOthersOver || currentMode !== 'normal' || !currentPiece) return;
+        playSe('decide');
         while (!checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.matrix)) {
             currentPiece.y++;
         }
@@ -2063,6 +2297,7 @@
         if (gameFinished || waitingForOthersOver || currentMode !== 'normal' || !currentPiece) return;
         const rot = rotateMatrix90(currentPiece.matrix);
         if (!checkCollision(currentPiece.x, currentPiece.y, rot)) {
+            playSe('cursor');
             currentPiece.matrix = rot;
             drawGame();
         }
@@ -2070,6 +2305,7 @@
 
     function handleMyNormalGameOver() {
         if (myFinishedSent) return;
+        playSe('gameOver');
         myFinishedSent = true;
         waitingForOthersOver = true;
         if (gameInterval) {
@@ -2146,6 +2382,7 @@
                 slot.addEventListener('touchstart', (e) => {
                     if (gameFinished || waitingForOthersOver || !isPlacementMode(currentMode) || !e.touches.length) return;
                     e.preventDefault();
+                    playSe('cursor');
                     startDraggingFromDock(idx, e.touches[0].clientX, e.touches[0].clientY);
                 }, { passive: false });
             }
@@ -2220,6 +2457,7 @@
         const pos = clientToBoardCell(clientX, clientY, dragMatrix);
 
         if (pos && !checkCollision(pos.x, pos.y, dragMatrix)) {
+            playSe('decide');
             mergeMatrix(pos.x, pos.y, dragMatrix);
             dockPieces[draggingDockIndex] = createDockItem();
             clearRowsAndColsPlacement();
@@ -2275,6 +2513,7 @@
 
     function handleNoPlaceableBlockEnd(isSurrender) {
         if (gameFinished || waitingForOthersOver || myFinishedSent) return;
+        playSe('gameOver');
         myFinishedSent = true;
 
         document.getElementById('drag-ghost').style.display = 'none';
@@ -2366,10 +2605,12 @@
             }
         }
         if (lines > 0) {
+            playSe('blockClear');
             score += lines * 10;
             document.getElementById('hud-score').innerText = `${score}点`;
             const nextMs = calcNormalIntervalMs(score);
             if (nextMs !== currentIntervalMs) {
+                playSe('speedUp');
                 resetGameInterval(nextMs);
                 const tier = Math.floor(score / 50);
                 document.getElementById('top-status-banner').innerText = `⚡ ${tier * 50}点到達！落下速度UP`;
@@ -2398,6 +2639,7 @@
         const clearedCount = fullRows.length + fullCols.length;
         if (clearedCount === 0) return;
 
+        playSe('blockClear');
         for (const r of fullRows) {
             for (let c = 0; c < boardWidth; c++) board[r][c] = 0;
         }
@@ -2417,6 +2659,7 @@
 
     function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
         if (gameFinished) return;
+        playSe('win');
         gameFinished = true;
         waitingForOthersOver = false;
 
