@@ -21,7 +21,7 @@
             height: 100dvh; width: 100vw; overflow: hidden;
         }
         #container {
-            width: 100%; max-width: 500px; height: 100dvh; max-height: 920px;
+            width: 100%; max-width: 520px; height: 100dvh; max-height: 940px;
             background: #1a1a1a; border: 2px solid #00ffff;
             display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
             position: relative; overflow: hidden;
@@ -80,7 +80,7 @@
             background: #ff00ff; border-color: #ff88ff; box-shadow: 0 0 10px #ff00ff;
         }
 
-        /* ゲームプレイ画面全体 */
+        /* ゲームプレイ画面：上部に大パズル画面、下部にGUI＆待機所 */
         #screen-game {
             justify-content: flex-start;
             padding: 6px 8px 8px 8px;
@@ -88,31 +88,25 @@
         }
         #game-main-area {
             width: 100%;
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 6px;
-        }
-        #game-layout {
-            display: flex;
-            width: 100%;
-            flex: 1;
-            min-height: 0;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 8px;
-        }
-        .canvas-wrap {
-            flex: 1;
             height: 100%;
             min-height: 0;
             display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            gap: 5px;
+        }
+        .board-stage {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            display: flex;
             justify-content: center;
-            align-items: flex-start;
-            padding-top: 2px;
+            align-items: center;
+            background: #09090d;
+            border: 1px solid #2c2c3a;
+            border-radius: 6px;
+            padding: 4px;
         }
         canvas#game-canvas {
             background: #000;
@@ -122,73 +116,16 @@
             touch-action: none;
         }
 
-        /* 右側GUIパネル */
-        .side-panel {
-            width: 124px;
-            flex-shrink: 0;
-            height: 100%;
-            max-height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            background: #222;
-            border: 1px solid #444;
-            padding: 6px 5px;
-            border-radius: 6px;
-            gap: 6px;
-            overflow-y: auto;
-        }
-        .hud-box {
-            width: 100%;
-            font-size: 11px;
-            text-align: center;
-            word-break: break-all;
-            color: #00ffff;
-            background: #181818;
-            padding: 4px 3px;
-            border-radius: 4px;
-            border: 1px solid #333;
-        }
-        #next-canvas {
-            background: #0e0e0e;
-            border: 1px solid #555;
-            border-radius: 4px;
-            margin-top: 2px;
-        }
-        .move-row {
-            display: flex;
-            gap: 5px;
-            width: 100%;
-        }
-        .gui-btn {
-            background: #004444;
-            color: #fff;
-            border: 2px solid #00ffff;
-            padding: 8px 3px;
-            font-size: 13px;
-            font-weight: bold;
-            border-radius: 6px;
-            width: 100%;
-            cursor: pointer;
-            text-align: center;
-            margin: 0;
-        }
-        .gui-btn:active {
-            background: #00ffff;
-            color: #000;
-        }
-
         /* スピードモード用：下部ブロック待機所（4枠） */
         #dock-area {
             display: none;
             width: 100%;
-            height: 98px;
+            height: 84px;
             flex-shrink: 0;
             background: #202028;
             border: 1px solid #ff00ff;
             border-radius: 6px;
-            padding: 4px;
+            padding: 3px 5px;
             flex-direction: column;
             justify-content: space-between;
         }
@@ -204,7 +141,7 @@
         #dock-slots {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
+            gap: 6px;
             flex: 1;
             min-height: 0;
         }
@@ -220,6 +157,104 @@
         }
         .dock-slot canvas {
             pointer-events: none;
+        }
+
+        /* 下部GUIパネル（ステータス＋大きめの押しやすい操作ボタン） */
+        .bottom-gui-panel {
+            width: 100%;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #222;
+            border: 1px solid #444;
+            padding: 6px;
+            border-radius: 6px;
+        }
+        .status-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            width: 100%;
+        }
+        .hud-pill {
+            flex: 1;
+            min-width: 0;
+            background: #16161c;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 4px 6px;
+            text-align: center;
+        }
+        .hud-label {
+            font-size: 9px;
+            color: #aaa;
+            line-height: 1.1;
+        }
+        .hud-val {
+            font-size: 13px;
+            font-weight: bold;
+            color: #00ffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .next-mini-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #121218;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 2px 6px;
+            flex-shrink: 0;
+        }
+        #next-canvas {
+            background: #09090d;
+            border-radius: 3px;
+        }
+        .big-controls-bar {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+            align-items: stretch;
+        }
+        .big-gui-btn {
+            flex: 1;
+            min-height: 48px;
+            background: #004444;
+            color: #fff;
+            border: 2px solid #00ffff;
+            padding: 10px 4px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .big-gui-btn:active {
+            background: #00ffff;
+            color: #000;
+        }
+        .big-gui-btn.rotate-btn {
+            background: #440044;
+            border-color: #ff00ff;
+        }
+        .big-gui-btn.rotate-btn:active {
+            background: #ff00ff;
+            color: #000;
+        }
+        .big-gui-btn.stop-btn {
+            flex: 0 0 64px;
+            background: #440000;
+            border-color: #ff5555;
+            font-size: 13px;
         }
 
         /* ドラッグ中の浮遊ブロック */
@@ -285,7 +320,7 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* WIN花火演出オーバーレイ */
+        /* スピードモードWIN花火演出オーバーレイ */
         #win-overlay {
             position: fixed;
             inset: 0;
@@ -299,13 +334,6 @@
         }
         #win-overlay.active {
             display: flex;
-        }
-        #fireworks-canvas {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
         }
         .win-banner {
             position: relative;
@@ -343,11 +371,58 @@
             display: flex;
         }
 
+        /* 結果発表画面＆花火背景 */
+        #screen-result {
+            position: relative;
+            overflow: hidden;
+        }
+        #result-fireworks-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            display: none;
+        }
+        #result-fireworks-canvas.active {
+            display: block;
+        }
+        .result-content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #sequential-announcement {
+            min-height: 46px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            text-align: center;
+            margin: 8px 0;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
         .result-item {
-            padding: 8px;
+            padding: 8px 10px;
             border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+        .result-item.rank-1 {
+            color: #ffd700;
+            font-weight: bold;
+            background: rgba(255, 215, 0, 0.12);
+            border-radius: 5px;
         }
         .result-item:last-child { border-bottom: none; }
+        .crown-mark {
+            font-size: 18px;
+        }
         .note-text {
             font-size: 11px; color: #aaa; text-align: center; line-height: 1.4; margin: 4px 0;
         }
@@ -369,7 +444,7 @@
     <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 2.2 (シンプルフロー・レディー＆GO!)</div>
+        <div class="version">Ver 2.4 (大パズル画面＆下部GUI・ホスト勝利点設定)</div>
         <button onclick="showScreen('screen-name')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
     </div>
 
@@ -382,7 +457,7 @@
         <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
-    <!-- ③ ホストまたはゲスト選択（シンプル入口） -->
+    <!-- ③ ホストまたはゲスト選択 -->
     <div id="screen-role" class="screen">
         <h1>モード選択</h1>
         <p class="note-text">ホストまたはゲストを選んでください</p>
@@ -421,7 +496,7 @@
         <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:16px;">最初に戻る</button>
     </div>
 
-    <!-- ⑥ ホスト：ブロック種類数＆ゲームモード選択（他はプリーズウェイト） -->
+    <!-- ⑥ ホスト：ブロック種類数＆ゲームモード選択 -->
     <div id="screen-host-setup" class="screen">
         <div id="host-setup-controls" style="width:100%; display:flex; flex-direction:column; align-items:center;">
             <h1>ブロック種類数＆モード</h1>
@@ -439,8 +514,8 @@
 
             <label class="note-text">ゲームモード</label>
             <select id="game-mode-select">
-                <option value="normal">ノーマルモード</option>
-                <option value="speed">スピードモード</option>
+                <option value="normal">ノーマルモード（全員終了まで対戦）</option>
+                <option value="speed">スピードモード（設定点数先取）</option>
             </select>
 
             <button onclick="distributeBlocksAndStartBuild()" style="background:#006644; border-color:#00ff88; font-weight:bold;">ブロック作成へ進む</button>
@@ -455,7 +530,7 @@
     <!-- ⑦ ブロック生成画面 -->
     <div id="screen-builder" class="screen">
         <div id="builder-assign-badge" class="assign-badge">あなたは〇個ブロックを作成してください</div>
-        <h3 id="builder-instruction">作成状況: 0 / 0個</h3>
+        <h3 id="builder-instruction">作成済み: 0 / 0個</h3>
 
         <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center; min-height:165px;"></div>
 
@@ -471,52 +546,11 @@
         <button id="btn-ready-trigger" class="dim-btn" onclick="openTargetScoreDialogForAll()" disabled>レディー</button>
     </div>
 
-    <!-- ⑨ ゲームプレイ画面 -->
+    <!-- ⑨ ゲームプレイ画面（上部：大パズル画面 / 下部：待機所＆大きめGUI） -->
     <div id="screen-game" class="screen">
         <div id="game-main-area">
-            <div id="game-layout">
-                <div class="canvas-wrap">
-                    <canvas id="game-canvas"></canvas>
-                </div>
-
-                <div class="side-panel">
-                    <div class="hud-box">
-                        <div style="font-size:10px; color:#aaa;">プレイヤー</div>
-                        <strong id="hud-name" style="font-size:12px; color:#fff;">-</strong>
-                    </div>
-                    <div class="hud-box">
-                        <div style="font-size:10px; color:#aaa;">得点 / 目標</div>
-                        <strong id="hud-score" style="font-size:15px; color:#ff00ff;">0点</strong>
-                        <div id="hud-target" style="font-size:10px; color:#ffd700;">目標: 30点</div>
-                    </div>
-                    <div class="hud-box">
-                        <div style="font-size:10px; color:#aaa;">モード</div>
-                        <span id="hud-info" style="font-size:10px;">-</span>
-                    </div>
-
-                    <!-- ノーマルモード用：次に来るブロック -->
-                    <div id="next-box" class="hud-box" style="display:none;">
-                        <div style="font-size:10px; color:#88ff88;">NEXT</div>
-                        <canvas id="next-canvas" width="76" height="64"></canvas>
-                    </div>
-
-                    <!-- ノーマルモード用：操作ボタン -->
-                    <div id="normal-controls" style="width:100%; display:flex; flex-direction:column; gap:5px;">
-                        <div class="move-row">
-                            <button class="gui-btn" onclick="movePiece(-1)">◀</button>
-                            <button class="gui-btn" onclick="movePiece(1)">▶</button>
-                        </div>
-                        <button class="gui-btn" onclick="rotatePiece()" style="background:#440044; border-color:#ff00ff;">🔄 回転</button>
-                        <button class="gui-btn" onclick="hardDrop()">⏬ 落下</button>
-                    </div>
-
-                    <!-- スピードモード用：案内 -->
-                    <div id="speed-controls-note" class="hud-box" style="display:none; color:#ff88ff; font-size:10px; line-height:1.3;">
-                        指より少し上に<br>浮かんで設置<br>(回転不可)
-                    </div>
-
-                    <button class="gui-btn" onclick="location.reload()" style="background:#440000; border-color:#ff5555; font-size:11px; padding:6px 3px; margin-top:auto;">やめる</button>
-                </div>
+            <div class="board-stage">
+                <canvas id="game-canvas"></canvas>
             </div>
 
             <!-- スピードモード用：下部ブロック待機所（4枠） -->
@@ -524,30 +558,87 @@
                 <div class="dock-label">ブロック待機所（タップしたまま盤面へドラッグ＆ドロップ）</div>
                 <div id="dock-slots"></div>
             </div>
+
+            <!-- 下部GUIパネル（プレイヤー・得点・条件・NEXT・大きめ操作ボタン） -->
+            <div class="bottom-gui-panel">
+                <div class="status-strip">
+                    <div class="hud-pill">
+                        <div class="hud-label">プレイヤー</div>
+                        <div id="hud-name" class="hud-val" style="color:#fff;">-</div>
+                    </div>
+                    <div class="hud-pill">
+                        <div class="hud-label">得点</div>
+                        <div id="hud-score" class="hud-val" style="color:#ff00ff;">0点</div>
+                    </div>
+                    <div class="hud-pill">
+                        <div id="hud-target" class="hud-val" style="color:#ffd700; font-size:11px;">全員終了まで</div>
+                        <div id="hud-info" class="hud-label">ノーマル</div>
+                    </div>
+                    <div id="next-mini-box" class="next-mini-box" style="display:none;">
+                        <div class="hud-label" style="color:#88ff88;">NEXT</div>
+                        <canvas id="next-canvas" width="54" height="36"></canvas>
+                    </div>
+                </div>
+
+                <!-- ノーマルモード用：大きめの操作ボタン -->
+                <div id="normal-controls" class="big-controls-bar">
+                    <button class="big-gui-btn" onclick="movePiece(-1)">◀ 左</button>
+                    <button class="big-gui-btn" onclick="movePiece(1)">▶ 右</button>
+                    <button class="big-gui-btn rotate-btn" onclick="rotatePiece()">🔄 回転</button>
+                    <button class="big-gui-btn" onclick="hardDrop()">⏬ 落下</button>
+                    <button class="big-gui-btn stop-btn" onclick="location.reload()">やめる</button>
+                </div>
+
+                <!-- スピードモード用：大きめ案内＆やめるボタン -->
+                <div id="speed-controls-bar" class="big-controls-bar" style="display:none;">
+                    <div class="big-gui-btn" style="background:#261433; border-color:#ff88ff; font-size:13px; cursor:default;">
+                        指より少し上に浮かべて設置（回転不可）
+                    </div>
+                    <button class="big-gui-btn stop-btn" onclick="location.reload()">やめる</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- ⑩ 結果発表画面 -->
     <div id="screen-result" class="screen">
-        <h1 id="result-title">結果発表</h1>
-        <div id="result-list" style="width:90%; max-height:240px; overflow-y:auto; margin:14px 0; background:#222; border:1px solid #444; border-radius:5px; padding:10px; font-size:15px; text-align:center;"></div>
-        <button onclick="rematchGame()" style="background:#006600; border-color:#00ff00;">再戦する</button>
-        <button onclick="location.reload()" style="background:#004444; border-color:#00ffff;">終了する</button>
+        <canvas id="result-fireworks-canvas"></canvas>
+        <div class="result-content">
+            <h1 id="result-title">結果発表</h1>
+            <div id="sequential-announcement"></div>
+            <div id="result-list" style="width:92%; max-height:220px; overflow-y:auto; margin:8px 0 12px 0; background:rgba(24,24,32,0.92); border:1px solid #555; border-radius:6px; padding:8px; font-size:14px; text-align:center;"></div>
+
+            <div id="host-result-actions" style="display:none; width:100%; flex-direction:column; align-items:center;">
+                <button onclick="hostChooseRematch()" style="background:#006600; border-color:#00ff00; font-weight:bold;">再戦</button>
+                <button onclick="hostChooseEnd()" style="background:#551111; border-color:#ff5555;">終了</button>
+            </div>
+
+            <div id="guest-result-actions" style="display:none; width:100%; flex-direction:column; align-items:center;">
+                <p id="guest-result-wait-msg" class="note-text" style="color:#ffd700; font-size:13px;">ホストが再戦か終了を選択中です...</p>
+                <button id="btn-guest-rematch-ready" class="lit-btn" style="display:none;" onclick="guestTapRematchReady()">レディー</button>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- 勝利条件ダイアログ -->
+<!-- 勝利条件ダイアログ（スピードモード用：ホストが選択、他プレイヤーは表示＆OK） -->
 <div id="target-dialog-overlay">
     <div class="dialog-card">
-        <h3 style="margin-top:0;">勝利条件を設定</h3>
-        <p class="note-text">何点でクリアにするか選んでOKを押してください</p>
-        <select id="dialog-win-score" style="width:100%;">
-            <option value="20">20点</option>
-            <option value="30" selected>30点</option>
-            <option value="50">50点</option>
-            <option value="80">80点</option>
-            <option value="100">100点</option>
-        </select>
+        <h3 id="dialog-title" style="margin-top:0;">勝利条件を設定</h3>
+        <div id="host-target-picker" style="display:none; flex-direction:column; align-items:center;">
+            <p class="note-text">ホストが勝利点数を決めてOKを押してください</p>
+            <select id="dialog-win-score" style="width:100%;">
+                <option value="20">20点</option>
+                <option value="30" selected>30点</option>
+                <option value="50">50点</option>
+                <option value="80">80点</option>
+                <option value="100">100点</option>
+            </select>
+        </div>
+        <div id="guest-target-display" style="display:none; flex-direction:column; align-items:center;">
+            <p class="note-text">ホストが設定した勝利条件</p>
+            <div id="guest-target-value" style="font-size:26px; font-weight:bold; color:#ffd700; margin:8px 0;">30点</div>
+        </div>
         <button id="btn-dialog-ok" onclick="confirmTargetScoreOk()" style="width:100%; background:#007700; border-color:#00ff00; font-weight:bold;">OK</button>
         <p id="dialog-ok-status" class="note-text" style="color:#ffd700; margin-top:8px;"></p>
     </div>
@@ -561,7 +652,7 @@
 <!-- ドラッグ中表示用 -->
 <canvas id="drag-ghost"></canvas>
 
-<!-- 最速到達時のWIN＆花火パーティクル演出 -->
+<!-- スピードモード最速到達時：WIN＆花火パーティクル演出 -->
 <div id="win-overlay">
     <canvas id="fireworks-canvas"></canvas>
     <div class="win-banner">
@@ -592,16 +683,20 @@
     let connections = [];
     let guestConnection = null;
 
-    // 完了＆OK状態管理
     let completedPlayers = new Set();
     let okPlayers = new Set();
+    let finishedPlayersMap = {};
+    let rematchReadyPlayers = new Set();
     let myDoneSent = false;
     let myOkSent = false;
+    let myFinishedSent = false;
 
-    let remoteResults = {};
     let winTargetScore = 30;
     let gameFinished = false;
+    let waitingForOthersOver = false;
     let fireworksAnimId = null;
+    let resultFireworksAnimId = null;
+    let announceTimers = [];
     let winActionTimer = null;
 
     function setButtonLit(btnId, lit) {
@@ -621,6 +716,10 @@
         if (screenId !== 'screen-game' && gameInterval) {
             clearInterval(gameInterval);
             gameInterval = null;
+        }
+        if (screenId !== 'screen-result') {
+            stopResultFireworks();
+            clearAnnounceTimers();
         }
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
@@ -642,7 +741,6 @@
         document.getElementById('guest-join-box').style.display = 'flex';
     }
 
-    // 最低1個保証＋余りをランダム振り分け
     function allocateBlockCounts(total, players) {
         const counts = Array(players).fill(0);
         if (players <= 0) return counts;
@@ -677,7 +775,8 @@
         connections = [];
         completedPlayers = new Set();
         okPlayers = new Set();
-        remoteResults = {};
+        finishedPlayersMap = {};
+        rematchReadyPlayers = new Set();
 
         try {
             peer = new Peer('wing_block_' + roomKey);
@@ -737,7 +836,8 @@
         roomKey = key;
         myDoneSent = false;
         myOkSent = false;
-        remoteResults = {};
+        myFinishedSent = false;
+        finishedPlayersMap = {};
 
         try {
             peer = new Peer();
@@ -792,8 +892,11 @@
         sharedBlocks = [];
         completedPlayers = new Set();
         okPlayers = new Set();
+        finishedPlayersMap = {};
+        rematchReadyPlayers = new Set();
         myDoneSent = false;
         myOkSent = false;
+        myFinishedSent = false;
 
         connections.forEach((c, idx) => {
             const pIdx = idx + 1;
@@ -935,27 +1038,48 @@
         if (!isHost) return;
         okPlayers = new Set();
         myOkSent = false;
-        broadcastToPeers({ type: 'open_target_dialog' });
-        showTargetScoreDialog();
+        if (currentMode === 'speed') {
+            showTargetScoreDialog(true, winTargetScore);
+        } else {
+            okPlayers.add(myId || ('local_' + myName));
+            broadcastToPeers({ type: 'normal_auto_ok' });
+            checkAllOkAndLaunchGo();
+        }
     }
 
-    function showTargetScoreDialog() {
+    function showTargetScoreDialog(isHostSetting, presetScore) {
         myOkSent = false;
         document.getElementById('dialog-ok-status').innerText = '';
         setButtonLit('btn-dialog-ok', true);
+
+        const hostPicker = document.getElementById('host-target-picker');
+        const guestDisplay = document.getElementById('guest-target-display');
+
+        if (isHostSetting) {
+            document.getElementById('dialog-title').innerText = '勝利条件を設定（ホスト）';
+            hostPicker.style.display = 'flex';
+            guestDisplay.style.display = 'none';
+        } else {
+            document.getElementById('dialog-title').innerText = '勝利条件の確認';
+            hostPicker.style.display = 'none';
+            guestDisplay.style.display = 'flex';
+            document.getElementById('guest-target-value').innerText = `${presetScore}点`;
+        }
+
         document.getElementById('target-dialog-overlay').classList.add('active');
     }
 
     function confirmTargetScoreOk() {
         if (myOkSent) return;
         myOkSent = true;
-        winTargetScore = parseInt(document.getElementById('dialog-win-score').value, 10) || 30;
         setButtonLit('btn-dialog-ok', false);
         document.getElementById('dialog-ok-status').innerText = '他のプレイヤーのOK待ち...';
 
         const actorId = myId || ('local_' + myName);
         if (isHost) {
+            winTargetScore = parseInt(document.getElementById('dialog-win-score').value, 10) || 30;
             okPlayers.add(actorId);
+            broadcastToPeers({ type: 'show_target_dialog_to_guest', winTargetScore });
             checkAllOkAndLaunchGo();
         } else if (guestConnection && guestConnection.open) {
             guestConnection.send({
@@ -969,6 +1093,8 @@
     function checkAllOkAndLaunchGo() {
         if (!isHost) return;
         if (okPlayers.size >= maxPlayers) {
+            finishedPlayersMap = {};
+            rematchReadyPlayers = new Set();
             const payload = {
                 type: 'launch_go',
                 mode: currentMode,
@@ -1007,8 +1133,11 @@
             myAssignedBlockCount = data.assignedCount ?? 1;
             myBuiltBlocks = [];
             sharedBlocks = [];
+            finishedPlayersMap = {};
+            rematchReadyPlayers = new Set();
             myDoneSent = false;
             myOkSent = false;
+            myFinishedSent = false;
             showScreen('screen-builder');
         } else if (data.type === 'player_done') {
             if (isHost) {
@@ -1022,15 +1151,23 @@
                 if (data.senderId) completedPlayers.add(data.senderId);
                 updateReadyScreenForHost();
             }
-        } else if (data.type === 'open_target_dialog') {
-            showTargetScoreDialog();
+        } else if (data.type === 'show_target_dialog_to_guest') {
+            winTargetScore = data.winTargetScore || 30;
+            showTargetScoreDialog(false, winTargetScore);
+        } else if (data.type === 'normal_auto_ok') {
+            if (isHost && senderConn) {
+                okPlayers.add(senderConn.peer || ('guest_' + Math.random()));
+                checkAllOkAndLaunchGo();
+            }
         } else if (data.type === 'player_ok') {
             if (isHost) {
-                if (data.winTargetScore) winTargetScore = data.winTargetScore;
                 if (data.senderId) okPlayers.add(data.senderId);
                 checkAllOkAndLaunchGo();
             }
         } else if (data.type === 'launch_go') {
+            finishedPlayersMap = {};
+            rematchReadyPlayers = new Set();
+            myFinishedSent = false;
             startGameWithGoOverlay(data.mode || currentMode, data.winTargetScore || winTargetScore, data.sharedBlocks);
         } else if (data.type === 'first_win') {
             triggerWinCelebration(data.winnerName, data.score, false);
@@ -1039,17 +1176,263 @@
                     if (c !== senderConn && c.open) c.send(data);
                 });
             }
-        } else if (data.type === 'result') {
-            remoteResults[data.name] = { score: data.score, status: data.status };
+        } else if (data.type === 'player_game_over') {
+            if (data.playerId) {
+                finishedPlayersMap[data.playerId] = {
+                    name: data.name || 'プレイヤー',
+                    score: data.score ?? 0,
+                    status: data.status || 'ゲームオーバー'
+                };
+            }
             if (isHost) {
                 connections.forEach(c => {
                     if (c !== senderConn && c.open) c.send(data);
                 });
+                checkAllPlayersFinishedNormal();
             }
-            renderResultList();
-        } else if (data.type === 'rematch') {
-            hideWinCelebration();
-            startGameWithGoOverlay(data.mode || currentMode, data.winTargetScore || winTargetScore, sharedBlocks);
+        } else if (data.type === 'all_finished_rankings') {
+            finishedPlayersMap = data.rankingsMap || finishedPlayersMap;
+            waitingForOthersOver = false;
+            showFinalResultScreen(finishedPlayersMap);
+        } else if (data.type === 'host_rematch_selected') {
+            if (!isHost) {
+                document.getElementById('guest-result-wait-msg').innerText = 'ホストが再戦を選びました！レディーを押してください';
+                document.getElementById('btn-guest-rematch-ready').style.display = 'block';
+                setButtonLit('btn-guest-rematch-ready', true);
+            }
+        } else if (data.type === 'guest_rematch_ready') {
+            if (isHost && data.playerId) {
+                rematchReadyPlayers.add(data.playerId);
+                checkAllRematchReadyAndStartBuild();
+            }
+        } else if (data.type === 'start_rematch_builder') {
+            totalBlockCount = data.totalBlockCount || totalBlockCount;
+            currentMode = data.mode || currentMode;
+            myAssignedBlockCount = data.assignedCount ?? 1;
+            myBuiltBlocks = [];
+            sharedBlocks = [];
+            finishedPlayersMap = {};
+            rematchReadyPlayers = new Set();
+            myDoneSent = false;
+            myOkSent = false;
+            myFinishedSent = false;
+            showScreen('screen-builder');
+        } else if (data.type === 'host_end_selected') {
+            alert('ホストが終了を選択しました。');
+            location.reload();
+        }
+    }
+
+    function checkAllPlayersFinishedNormal() {
+        if (!isHost || currentMode !== 'normal') return;
+        const finishedCount = Object.keys(finishedPlayersMap).length;
+        if (finishedCount >= maxPlayers) {
+            const payload = {
+                type: 'all_finished_rankings',
+                rankingsMap: finishedPlayersMap
+            };
+            broadcastToPeers(payload);
+            waitingForOthersOver = false;
+            showFinalResultScreen(finishedPlayersMap);
+        }
+    }
+
+    function clearAnnounceTimers() {
+        announceTimers.forEach(id => clearTimeout(id));
+        announceTimers = [];
+    }
+
+    function stopResultFireworks() {
+        const fwCanvas = document.getElementById('result-fireworks-canvas');
+        if (fwCanvas) fwCanvas.classList.remove('active');
+        if (resultFireworksAnimId) {
+            cancelAnimationFrame(resultFireworksAnimId);
+            resultFireworksAnimId = null;
+        }
+    }
+
+    function startResultFireworks() {
+        const fwCanvas = document.getElementById('result-fireworks-canvas');
+        if (!fwCanvas) return;
+        fwCanvas.classList.add('active');
+        const fwCtx = fwCanvas.getContext('2d');
+        fwCanvas.width = fwCanvas.parentElement?.clientWidth || window.innerWidth;
+        fwCanvas.height = fwCanvas.parentElement?.clientHeight || window.innerHeight;
+
+        const particles = [];
+        const colors = ['#ff00ff', '#00ffff', '#ffd700', '#00ff88', '#ff5555', '#ffffff'];
+
+        function spawnBurst() {
+            const cx = Math.random() * fwCanvas.width * 0.8 + fwCanvas.width * 0.1;
+            const cy = Math.random() * fwCanvas.height * 0.4 + fwCanvas.height * 0.08;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            for (let i = 0; i < 32; i++) {
+                const angle = (Math.PI * 2 * i) / 32;
+                const speed = 1.6 + Math.random() * 3.5;
+                particles.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    alpha: 1,
+                    color
+                });
+            }
+        }
+
+        spawnBurst();
+        let tick = 0;
+        if (resultFireworksAnimId) cancelAnimationFrame(resultFireworksAnimId);
+
+        function loop() {
+            fwCtx.fillStyle = 'rgba(15, 15, 25, 0.22)';
+            fwCtx.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
+            tick++;
+            if (tick % 30 === 0) spawnBurst();
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.045;
+                p.alpha -= 0.016;
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                fwCtx.globalAlpha = Math.max(0, p.alpha);
+                fwCtx.fillStyle = p.color;
+                fwCtx.beginPath();
+                fwCtx.arc(p.x, p.y, 2.8, 0, Math.PI * 2);
+                fwCtx.fill();
+            }
+            fwCtx.globalAlpha = 1;
+            resultFireworksAnimId = requestAnimationFrame(loop);
+        }
+        loop();
+    }
+
+    function showFinalResultScreen(mapObj) {
+        clearAnnounceTimers();
+        stopResultFireworks();
+
+        showScreen('screen-result');
+        document.getElementById('result-title').innerText = '結果発表';
+        const announceEl = document.getElementById('sequential-announcement');
+        const listEl = document.getElementById('result-list');
+        announceEl.innerText = '';
+        listEl.innerHTML = '';
+
+        const hostActions = document.getElementById('host-result-actions');
+        const guestActions = document.getElementById('guest-result-actions');
+        hostActions.style.display = 'none';
+        guestActions.style.display = 'none';
+        document.getElementById('btn-guest-rematch-ready').style.display = 'none';
+        document.getElementById('guest-result-wait-msg').innerText = 'ホストが再戦か終了を選択中です...';
+
+        const entries = Object.values(mapObj || {}).sort((a, b) => b.score - a.score);
+        if (entries.length === 0) {
+            entries.push({ name: myName || 'プレイヤー', score, status: '終了' });
+        }
+
+        let currentRank = 1;
+        const ranked = entries.map((item, idx) => {
+            if (idx > 0 && item.score < entries[idx - 1].score) {
+                currentRank = idx + 1;
+            }
+            return { ...item, rank: currentRank };
+        });
+
+        const orderToAnnounce = [...ranked].reverse();
+        const stepMs = 1100;
+
+        orderToAnnounce.forEach((item, i) => {
+            const tId = setTimeout(() => {
+                announceEl.innerText = `${item.rank}位：${item.name}（${item.score}点）`;
+            }, i * stepMs);
+            announceTimers.push(tId);
+        });
+
+        const summaryTimer = setTimeout(() => {
+            announceEl.innerText = '👑 最終ランキング一覧 👑';
+            listEl.innerHTML = ranked.map((item) => {
+                const isFirst = item.rank === 1;
+                const crownHtml = isFirst ? `<span class="crown-mark">👑</span>` : '';
+                return `<div class="result-item ${isFirst ? 'rank-1' : ''}">
+                    ${crownHtml}<span>${item.rank}位: <strong>${item.name}</strong> — ${item.score}点</span>
+                </div>`;
+            }).join('');
+
+            startResultFireworks();
+
+            if (isHost) {
+                hostActions.style.display = 'flex';
+            } else {
+                guestActions.style.display = 'flex';
+            }
+        }, orderToAnnounce.length * stepMs + 500);
+
+        announceTimers.push(summaryTimer);
+    }
+
+    function hostChooseRematch() {
+        if (!isHost) return;
+        rematchReadyPlayers = new Set();
+        rematchReadyPlayers.add(myId || ('local_' + myName));
+        broadcastToPeers({ type: 'host_rematch_selected' });
+
+        if (maxPlayers === 1) {
+            checkAllRematchReadyAndStartBuild();
+        } else {
+            document.getElementById('host-result-actions').innerHTML =
+                `<p class="note-text" style="color:#00ff88; font-size:13px;">他プレイヤーの「レディー」待ち...</p>`;
+        }
+    }
+
+    function hostChooseEnd() {
+        if (!isHost) return;
+        broadcastToPeers({ type: 'host_end_selected' });
+        location.reload();
+    }
+
+    function guestTapRematchReady() {
+        const btn = document.getElementById('btn-guest-rematch-ready');
+        if (!btn || btn.disabled) return;
+        setButtonLit('btn-guest-rematch-ready', false);
+        document.getElementById('guest-result-wait-msg').innerText = 'レディー送信済み！全員の準備待ち...';
+
+        const actorId = myId || ('local_' + myName);
+        if (guestConnection && guestConnection.open) {
+            guestConnection.send({ type: 'guest_rematch_ready', playerId: actorId });
+        }
+    }
+
+    function checkAllRematchReadyAndStartBuild() {
+        if (!isHost) return;
+        if (rematchReadyPlayers.size >= maxPlayers) {
+            const allocations = allocateBlockCounts(totalBlockCount, maxPlayers);
+            myAssignedBlockCount = allocations[0];
+            myBuiltBlocks = [];
+            sharedBlocks = [];
+            finishedPlayersMap = {};
+            rematchReadyPlayers = new Set();
+            myDoneSent = false;
+            myOkSent = false;
+            myFinishedSent = false;
+
+            connections.forEach((c, idx) => {
+                const count = allocations[idx + 1] ?? 1;
+                if (c.open) {
+                    c.send({
+                        type: 'start_rematch_builder',
+                        totalBlockCount,
+                        mode: currentMode,
+                        assignedCount: count
+                    });
+                }
+            });
+
+            showScreen('screen-builder');
         }
     }
 
@@ -1095,49 +1478,56 @@
 
     function initGame() {
         gameFinished = false;
+        waitingForOthersOver = false;
+        myFinishedSent = false;
         hideWinCelebration();
 
         document.getElementById('hud-name').innerText = myName || 'プレイヤー';
-        document.getElementById('hud-target').innerText = `目標: ${winTargetScore}点`;
         canvas = document.getElementById('game-canvas');
         ctx = canvas.getContext('2d');
         nextCanvas = document.getElementById('next-canvas');
         nextCtx = nextCanvas.getContext('2d');
 
         const dockArea = document.getElementById('dock-area');
-        const nextBox = document.getElementById('next-box');
+        const nextBox = document.getElementById('next-mini-box');
         const normalControls = document.getElementById('normal-controls');
-        const speedNote = document.getElementById('speed-controls-note');
+        const speedBar = document.getElementById('speed-controls-bar');
 
-        const containerHeight = document.getElementById('container').clientHeight || 700;
+        const containerHeight = document.getElementById('container').clientHeight || 720;
         const containerWidth = document.getElementById('container').clientWidth || 390;
-        const availableWidth = Math.max(180, containerWidth - 150);
+        const usableWidth = Math.max(200, containerWidth - 36);
 
         if (currentMode === 'normal') {
             boardWidth = 10;
             boardHeight = 20;
-            const maxByHeight = Math.floor((containerHeight - 28) / boardHeight);
-            const maxByWidth = Math.floor(availableWidth / boardWidth);
-            blockSize = Math.max(16, Math.min(26, maxByHeight, maxByWidth));
+            // 下部GUI（約108px）を除いた領域でパズル画面を最大化
+            const usableHeight = Math.max(260, containerHeight - 130);
+            const maxByHeight = Math.floor(usableHeight / boardHeight);
+            const maxByWidth = Math.floor(usableWidth / boardWidth);
+            blockSize = Math.max(16, Math.min(34, maxByHeight, maxByWidth));
 
             currentIntervalMs = 750;
+            document.getElementById('hud-target').innerText = '全員終了まで';
             document.getElementById('hud-info').innerText = 'ノーマル(落下)';
             dockArea.classList.remove('active');
-            nextBox.style.display = 'block';
+            nextBox.style.display = 'flex';
             normalControls.style.display = 'flex';
-            speedNote.style.display = 'none';
+            speedBar.style.display = 'none';
         } else {
             boardWidth = 10;
             boardHeight = 10;
-            const maxByHeight = Math.floor((containerHeight - 126) / boardHeight);
-            const maxByWidth = Math.floor(availableWidth / boardWidth);
-            blockSize = Math.max(20, Math.min(34, maxByHeight, maxByWidth));
+            // 待機所（84px）＋下部GUI（約108px）を除いた領域でパズル画面を最大化
+            const usableHeight = Math.max(200, containerHeight - 220);
+            const maxByHeight = Math.floor(usableHeight / boardHeight);
+            const maxByWidth = Math.floor(usableWidth / boardWidth);
+            blockSize = Math.max(22, Math.min(44, maxByHeight, maxByWidth));
 
+            document.getElementById('hud-target').innerText = `目標: ${winTargetScore}点`;
             document.getElementById('hud-info').innerText = 'スピード(設置)';
             dockArea.classList.add('active');
             nextBox.style.display = 'none';
             normalControls.style.display = 'none';
-            speedNote.style.display = 'block';
+            speedBar.style.display = 'flex';
         }
 
         canvas.width = boardWidth * blockSize;
@@ -1188,7 +1578,7 @@
 
         const rows = nextPiece.length;
         const cols = nextPiece[0].length;
-        const cell = Math.min(13, Math.floor(64 / Math.max(rows, 2)), Math.floor(72 / Math.max(cols, 2)));
+        const cell = Math.min(9, Math.floor(32 / Math.max(rows, 2)), Math.floor(48 / Math.max(cols, 2)));
         const offsetX = Math.floor((nextCanvas.width - cols * cell) / 2);
         const offsetY = Math.floor((nextCanvas.height - rows * cell) / 2);
 
@@ -1209,16 +1599,15 @@
     }
 
     function updateNormalGame() {
-        if (gameFinished || currentMode !== 'normal' || !currentPiece) return;
+        if (gameFinished || waitingForOthersOver || currentMode !== 'normal' || !currentPiece) return;
         currentPiece.y++;
         if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
             currentPiece.y--;
             mergeMatrix(currentPiece.x, currentPiece.y, currentPiece.matrix);
             clearLines();
-            if (gameFinished) return;
             spawnNormalPiece();
             if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-                endGame('ゲームオーバー');
+                handleMyNormalGameOver();
                 return;
             }
         }
@@ -1226,7 +1615,7 @@
     }
 
     function movePiece(dir) {
-        if (gameFinished || currentMode !== 'normal' || !currentPiece) return;
+        if (gameFinished || waitingForOthersOver || currentMode !== 'normal' || !currentPiece) return;
         const nx = currentPiece.x + dir;
         if (!checkCollision(nx, currentPiece.y, currentPiece.matrix)) {
             currentPiece.x = nx;
@@ -1235,27 +1624,59 @@
     }
 
     function hardDrop() {
-        if (gameFinished || currentMode !== 'normal' || !currentPiece) return;
+        if (gameFinished || waitingForOthersOver || currentMode !== 'normal' || !currentPiece) return;
         while (!checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.matrix)) {
             currentPiece.y++;
         }
         mergeMatrix(currentPiece.x, currentPiece.y, currentPiece.matrix);
         clearLines();
-        if (gameFinished) return;
         spawnNormalPiece();
         if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-            endGame('ゲームオーバー');
+            handleMyNormalGameOver();
             return;
         }
         drawGame();
     }
 
     function rotatePiece() {
-        if (gameFinished || currentMode !== 'normal' || !currentPiece) return;
+        if (gameFinished || waitingForOthersOver || currentMode !== 'normal' || !currentPiece) return;
         const rot = rotateMatrix90(currentPiece.matrix);
         if (!checkCollision(currentPiece.x, currentPiece.y, rot)) {
             currentPiece.matrix = rot;
             drawGame();
+        }
+    }
+
+    function handleMyNormalGameOver() {
+        if (myFinishedSent) return;
+        myFinishedSent = true;
+        waitingForOthersOver = true;
+        if (gameInterval) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+        }
+
+        const actorId = myId || ('local_' + myName);
+        const record = {
+            name: myName || 'プレイヤー',
+            score,
+            status: 'ゲームオーバー'
+        };
+        finishedPlayersMap[actorId] = record;
+
+        const payload = {
+            type: 'player_game_over',
+            playerId: actorId,
+            ...record
+        };
+
+        if (isHost) {
+            checkAllPlayersFinishedNormal();
+        } else if (guestConnection && guestConnection.open) {
+            guestConnection.send(payload);
+            document.getElementById('hud-info').innerText = '他プレイヤー終了待ち';
+        } else {
+            showFinalResultScreen(finishedPlayersMap);
         }
     }
 
@@ -1284,7 +1705,7 @@
                 const pCanvas = document.createElement('canvas');
                 const rows = item.matrix.length;
                 const cols = item.matrix[0].length;
-                const cell = Math.min(13, Math.floor(54 / Math.max(rows, 2)), Math.floor(68 / Math.max(cols, 2)));
+                const cell = Math.min(12, Math.floor(48 / Math.max(rows, 2)), Math.floor(72 / Math.max(cols, 2)));
                 pCanvas.width = cols * cell;
                 pCanvas.height = rows * cell;
                 const pCtx = pCanvas.getContext('2d');
@@ -1384,7 +1805,7 @@
                 return;
             }
             if (!hasAnyPlaceableDockPiece()) {
-                endGame('ゲームオーバー');
+                handleSpeedGameOver();
                 draggingDockIndex = -1;
                 dragMatrix = null;
                 return;
@@ -1451,7 +1872,7 @@
             score += lines * 10;
             document.getElementById('hud-score').innerText = `${score}点`;
 
-            if (score >= winTargetScore) {
+            if (currentMode === 'speed' && score >= winTargetScore) {
                 const winnerName = myName || 'プレイヤー';
                 broadcastToPeers({ type: 'first_win', winnerName, score });
                 triggerWinCelebration(winnerName, score, true);
@@ -1483,11 +1904,6 @@
         overlay.classList.add('active');
 
         startFireworks();
-
-        remoteResults[winnerName] = { score: winnerScore, status: '🏆 WIN!!' };
-        if (isLocalWinner) {
-            broadcastToPeers({ type: 'result', name: myName || 'プレイヤー', score, status: '🏆 WIN!!' });
-        }
 
         if (winActionTimer) clearTimeout(winActionTimer);
         winActionTimer = setTimeout(() => {
@@ -1570,8 +1986,13 @@
 
     function rematchGame() {
         hideWinCelebration();
-        broadcastToPeers({ type: 'rematch', mode: currentMode, winTargetScore });
-        startGameWithGoOverlay(currentMode, winTargetScore, sharedBlocks);
+        if (isHost) {
+            hostChooseRematch();
+        } else {
+            const actorId = myId || ('local_' + myName);
+            finishedPlayersMap[actorId] = { name: myName || 'プレイヤー', score, status: '終了' };
+            showFinalResultScreen(finishedPlayersMap);
+        }
     }
 
     function finishFromWin() {
@@ -1579,38 +2000,20 @@
         location.reload();
     }
 
-    function renderResultList() {
-        const listEl = document.getElementById('result-list');
-        const entries = Object.entries(remoteResults).map(([name, info]) => ({
-            name,
-            score: info.score,
-            status: info.status
-        }));
-        entries.sort((a, b) => b.score - a.score);
-        listEl.innerHTML = entries.map((item, idx) =>
-            `<div class="result-item"><strong>${idx + 1}位: ${item.name}</strong> — ${item.score}点 <span style="font-size:12px;color:#aaa;">(${item.status})</span></div>`
-        ).join('');
-    }
-
-    function endGame(statusText) {
+    function handleSpeedGameOver() {
         if (gameFinished) return;
         gameFinished = true;
-
-        if (gameInterval) {
-            clearInterval(gameInterval);
-            gameInterval = null;
-        }
         document.getElementById('drag-ghost').style.display = 'none';
         draggingDockIndex = -1;
         dragMatrix = null;
 
-        const playerLabel = myName || 'プレイヤー';
-        remoteResults[playerLabel] = { score, status: statusText };
-        broadcastToPeers({ type: 'result', name: playerLabel, score, status: statusText });
-
-        showScreen('screen-result');
-        document.getElementById('result-title').innerText = statusText;
-        renderResultList();
+        const actorId = myId || ('local_' + myName);
+        finishedPlayersMap[actorId] = {
+            name: myName || 'プレイヤー',
+            score,
+            status: 'ゲームオーバー'
+        };
+        showFinalResultScreen(finishedPlayersMap);
     }
 
     function drawGame(ghostPos = null) {
@@ -1672,14 +2075,14 @@
 
     let startX = 0;
     window.addEventListener('touchstart', e => {
-        if (gameFinished || !document.getElementById('screen-game').classList.contains('active')) return;
+        if (gameFinished || waitingForOthersOver || !document.getElementById('screen-game').classList.contains('active')) return;
         if (currentMode === 'normal' && e.touches.length) {
             startX = e.touches[0].clientX;
         }
     }, { passive: true });
 
     window.addEventListener('touchmove', e => {
-        if (gameFinished || !document.getElementById('screen-game').classList.contains('active')) return;
+        if (gameFinished || waitingForOthersOver || !document.getElementById('screen-game').classList.contains('active')) return;
         if (!e.touches.length) return;
         const t = e.touches[0];
 
