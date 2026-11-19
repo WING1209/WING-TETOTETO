@@ -7,48 +7,57 @@
     <!-- PeerJS CDN -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
         body {
             margin: 0; padding: 0;
             background-color: #111; color: #fff;
-            font-family: monospace;
+            font-family: monospace, sans-serif;
             display: flex; justify-content: center; align-items: center;
-            height: 100vh; overflow: hidden;
+            height: 100dvh; width: 100vw; overflow: hidden;
         }
         #container {
-            width: 100%; max-width: 480px; height: 100%; max-height: 850px;
+            width: 100%; max-width: 500px; height: 100dvh; max-height: 920px;
             background: #1a1a1a; border: 2px solid #00ffff;
-            display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            display: flex; flex-direction: column; justify-content: flex-start; align-items: center;
             position: relative; overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
         }
         .screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: none; flex-direction: column; justify-content: center; align-items: center;
-            background: #1a1a1a; padding: 20px; z-index: 10;
+            background: #1a1a1a; padding: 14px; z-index: 10;
+            overflow-y: auto;
         }
         .screen.active { display: flex; }
         h1, h3 { color: #00ffff; text-align: center; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
-        h1 { font-size: 22px; margin-bottom: 5px; }
-        h3 { font-size: 16px; margin: 10px 0; }
+        h1 { font-size: 21px; margin: 4px 0; }
+        h3 { font-size: 16px; margin: 6px 0; }
         .version {
-            color: #00ff00; font-size: 12px; margin-bottom: 20px;
+            color: #00ff00; font-size: 12px; margin-bottom: 16px;
             background: #222; padding: 3px 8px; border-radius: 4px; border: 1px dashed #00ff00;
         }
         button, input, select {
             background: #333; color: #fff; border: 2px solid #00ffff;
-            padding: 12px 20px; font-size: 16px; border-radius: 5px;
-            margin: 8px 0; width: 85%; max-width: 260px; text-align: center;
+            padding: 10px 16px; font-size: 15px; border-radius: 6px;
+            margin: 6px 0; width: 86%; max-width: 290px; text-align: center;
+            cursor: pointer;
         }
         button:active { background: #00ffff; color: #000; }
-        input, select { background: #222; }
-        
+        input, select { background: #222; cursor: text; }
+        select { cursor: pointer; }
+
         .grid-3x3 {
-            display: grid; grid-template-columns: repeat(3, 55px); grid-template-rows: repeat(3, 55px);
-            gap: 5px; margin: 15px 0;
+            display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px);
+            gap: 5px; margin: 10px 0;
         }
         .grid-3x6 {
-            display: grid; grid-template-columns: repeat(6, 42px); grid-template-rows: repeat(3, 42px);
-            gap: 4px; margin: 15px 0;
+            display: grid; grid-template-columns: repeat(6, 40px); grid-template-rows: repeat(3, 40px);
+            gap: 4px; margin: 10px 0;
         }
         .cell-box {
             background: #222; border: 2px solid #555; cursor: pointer; border-radius: 4px;
@@ -57,89 +66,202 @@
             background: #ff00ff; border-color: #ff88ff; box-shadow: 0 0 10px #ff00ff;
         }
 
-        /* ゲームプレイ画面のレイアウト（左右分割） */
+        /* ゲームプレイ画面全体（上寄せ・見切れ防止＆大画面化） */
+        #screen-game {
+            justify-content: flex-start;
+            padding: 6px 8px 8px 8px;
+            overflow: hidden;
+        }
+        #game-main-area {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 6px;
+        }
         #game-layout {
             display: flex;
             width: 100%;
-            height: 100%;
+            flex: 1;
+            min-height: 0;
             justify-content: space-between;
-            align-items: center;
-            padding: 10px;
+            align-items: flex-start;
+            gap: 8px;
         }
-        canvas { background: #000; display: block; border: 2px solid #00ffff; }
-        
+        .canvas-wrap {
+            flex: 1;
+            height: 100%;
+            min-height: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 2px;
+        }
+        canvas#game-canvas {
+            background: #000;
+            display: block;
+            border: 2px solid #00ffff;
+            border-radius: 4px;
+            touch-action: none;
+        }
+
         /* 右側GUIパネル */
         .side-panel {
-            width: 140px;
+            width: 124px;
+            flex-shrink: 0;
             height: 100%;
+            max-height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: space-around;
+            justify-content: flex-start;
             align-items: center;
             background: #222;
             border: 1px solid #444;
-            padding: 10px 5px;
+            padding: 6px 5px;
             border-radius: 6px;
+            gap: 6px;
+            overflow-y: auto;
         }
-        .side-panel div {
-            font-size: 13px;
+        .hud-box {
+            width: 100%;
+            font-size: 11px;
             text-align: center;
             word-break: break-all;
             color: #00ffff;
+            background: #181818;
+            padding: 4px 3px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        #next-canvas {
+            background: #0e0e0e;
+            border: 1px solid #555;
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+        .move-row {
+            display: flex;
+            gap: 5px;
+            width: 100%;
         }
         .gui-btn {
             background: #004444;
             color: #fff;
             border: 2px solid #00ffff;
-            padding: 15px 5px;
-            font-size: 16px;
+            padding: 8px 3px;
+            font-size: 13px;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 6px;
             width: 100%;
             cursor: pointer;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(0,255,255,0.2);
+            margin: 0;
         }
         .gui-btn:active {
             background: #00ffff;
             color: #000;
+        }
+
+        /* スピードモード用：下部ブロック待機所（4枠） */
+        #dock-area {
+            display: none;
+            width: 100%;
+            height: 98px;
+            flex-shrink: 0;
+            background: #202028;
+            border: 1px solid #ff00ff;
+            border-radius: 6px;
+            padding: 4px;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        #dock-area.active {
+            display: flex;
+        }
+        .dock-label {
+            font-size: 10px;
+            color: #ff88ff;
+            text-align: center;
+            line-height: 1.1;
+        }
+        #dock-slots {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            flex: 1;
+            min-height: 0;
+        }
+        .dock-slot {
+            background: #141418;
+            border: 1px dashed #666;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            touch-action: none;
+        }
+        .dock-slot canvas {
+            pointer-events: none;
+        }
+
+        /* ドラッグ中の浮遊ブロック */
+        #drag-ghost {
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 0 8px rgba(255, 0, 255, 0.8));
+        }
+
+        .result-item {
+            padding: 8px;
+            border-bottom: 1px solid #333;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .note-text {
+            font-size: 11px; color: #aaa; text-align: center; line-height: 1.4; margin: 4px 0;
         }
     </style>
 </head>
 <body>
 
 <div id="container">
-    <!-- ① タイトル画面 (Ver 1.5) -->
+    <!-- ① タイトル画面 -->
     <div id="screen-title" class="screen active">
         <h1>▣WINGブロック崩し▣</h1>
-        <div class="version">Ver 1.5 (右側操作GUI追加)</div>
+        <div class="version">Ver 2.0 (ドラッグ設置・個数指定・JSONBin連携)</div>
         <button onclick="showScreen('screen-name')" style="background:#330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
     </div>
 
     <!-- ② 名前入力画面 -->
     <div id="screen-name" class="screen">
         <h1>プレイヤー名入力</h1>
-        <p style="font-size:13px; color:#aaa; text-align:center; margin-bottom:15px;">ひらがな6文字以内で入力</p>
+        <p class="note-text">ひらがな6文字以内で入力してください</p>
         <input type="text" id="player-name-input" placeholder="例: やまだ" maxlength="6">
-        <button onclick="submitName()">決定してブロック作成</button>
-        <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">もどる</button>
+        <button onclick="submitName()">次へ（作成個数・ルーム設定）</button>
+        <button onclick="showScreen('screen-title')" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">もどる</button>
     </div>
 
-    <!-- ③ ブロック生成画面 -->
-    <div id="screen-builder" class="screen">
-        <h3 id="builder-instruction">ブロックを作ろう (1/5個目)</h3>
-        <p style="font-size:12px; color:#00ffff; margin:0;">マスをタップして形を作成</p>
-        
-        <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center; min-height:180px;"></div>
-        
-        <button onclick="toggleBuilderSize()" id="btn-toggle-size" style="background:#224; border-color:#88ff88; color:#88ff88; padding:8px 15px; font-size:14px;">モード切替: 3×3</button>
-        <button onclick="completeCurrentBlock()" style="background:#005555; border-color:#00ffff;">このブロックで決定</button>
-    </div>
-
-    <!-- ④ ルーム設定画面 -->
+    <!-- ③ 作成個数＆ルーム設定画面 -->
     <div id="screen-room" class="screen">
-        <h1>ルーム対戦設定</h1>
-        <label style="font-size:13px; color:#aaa;">プレイ人数</label>
+        <h1>作成数＆ルーム設定</h1>
+
+        <label class="note-text">最初に作るブロックの種類数（合計）</label>
+        <select id="total-block-count">
+            <option value="3">3種類</option>
+            <option value="4">4種類</option>
+            <option value="5" selected>5種類</option>
+            <option value="6">6種類</option>
+            <option value="8">8種類</option>
+            <option value="10">10種類</option>
+        </select>
+
+        <label class="note-text">プレイ人数（複数人で作成数を振り分けます）</label>
         <select id="player-count">
             <option value="1">1名 (ソロプレイ)</option>
             <option value="2">2名</option>
@@ -147,62 +269,106 @@
             <option value="4">4名</option>
             <option value="5">5名</option>
         </select>
-        
-        <button onclick="setupAsHost()" style="background:#004444;">ホストとして作成</button>
-        <button onclick="showJoinInput()" style="background:#440044;">ゲストとして参加</button>
-        
+
+        <button onclick="startSoloBuilder()" style="background:#224422; border-color:#88ff88;">このままブロック作成へ</button>
+        <button onclick="setupAsHost()" style="background:#004444;">ホストとしてルーム作成</button>
+        <button onclick="showJoinInput()" style="background:#440044;">ゲストとしてルーム参加</button>
+
         <div id="join-box" style="display:none; width:100%; flex-direction:column; align-items:center;">
-            <input type="text" id="room-key-input" placeholder="4桁のルームキー" maxlength="4">
+            <input type="text" id="room-key-input" placeholder="4桁のルームキー" maxlength="4" inputmode="numeric">
             <button onclick="joinAsGuest()" style="background:#005500;">ルームに接続</button>
         </div>
-        
-        <button onclick="showScreen('screen-builder')" style="border-color:#ff5555; color:#ff5555; margin-top:10px;">もどる</button>
+
+        <details style="width:86%; max-width:290px; margin-top:6px; background:#222; padding:6px 10px; border-radius:5px; border:1px solid #444;">
+            <summary style="font-size:12px; color:#00ffff; cursor:pointer;">JSONBin.io 共有設定（任意）</summary>
+            <p class="note-text" style="text-align:left;">※リアルタイム対戦はPeerJSで行い、ブロックやスコアの共有保存にJSONBin.ioを使えます。</p>
+            <input type="text" id="jsonbin-key" placeholder="X-Master-Key (任意)" style="width:100%; font-size:12px; padding:7px; margin:4px 0;">
+            <input type="text" id="jsonbin-bin-id" placeholder="Bin ID (既存を使う場合・任意)" style="width:100%; font-size:12px; padding:7px; margin:4px 0;">
+        </details>
+
+        <button onclick="showScreen('screen-name')" style="border-color:#ff5555; color:#ff5555; margin-top:8px;">もどる</button>
+    </div>
+
+    <!-- ④ ブロック生成画面 -->
+    <div id="screen-builder" class="screen">
+        <h3 id="builder-instruction">ブロックを作ろう (1/5個目)</h3>
+        <p id="builder-subinfo" class="note-text" style="color:#00ffff;">マスをタップして好きな形を作成</p>
+
+        <div id="builder-canvas-container" style="display:flex; justify-content:center; align-items:center; min-height:170px;"></div>
+
+        <button onclick="toggleBuilderSize()" id="btn-toggle-size" style="background:#224; border-color:#88ff88; color:#88ff88; padding:8px 14px; font-size:13px;">モード切替: 3×3</button>
+        <button onclick="completeCurrentBlock()" style="background:#005555; border-color:#00ffff;">このブロックで決定</button>
     </div>
 
     <!-- ⑤ 待機ロビー画面 -->
     <div id="screen-lobby" class="screen">
         <h1 id="lobby-status">接続待機中...</h1>
-        <div id="key-display" style="font-size:24px; color:#00ff00; margin:15px 0; font-weight:bold;"></div>
-        <p id="connection-count" style="font-size:14px; color:#ccc;"></p>
-        
-        <button id="btn-start-game" onclick="proceedToModeSelect()" style="display:none; background:#00aa00; border-color:#00ff00; font-weight:bold;">ゲーム開始！</button>
-        <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:20px;">最初に戻る</button>
+        <div id="key-display" style="font-size:22px; color:#00ff00; margin:10px 0; font-weight:bold;"></div>
+        <p id="connection-count" style="font-size:13px; color:#ccc;"></p>
+        <p id="lobby-blocks-info" class="note-text" style="color:#ff88ff;"></p>
+
+        <button id="btn-start-game" onclick="proceedToModeSelect()" style="display:none; background:#00aa00; border-color:#00ff00; font-weight:bold;">モード選択へ進む</button>
+        <button onclick="location.reload()" style="border-color:#ff5555; color:#ff5555; margin-top:14px;">最初に戻る</button>
     </div>
 
     <!-- ⑥ モード選択画面 -->
     <div id="screen-mode" class="screen">
         <h1>ゲームモード選択</h1>
-        <button onclick="startGame('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦10×横20)</span></button>
-        <button onclick="startGame('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・30点先取)</span></button>
+        <button onclick="selectModeAndStart('normal')">① ノーマルモード<br><span style="font-size:11px;color:#aaa;">(縦20×横10・落下＆NEXT表示)</span></button>
+        <button onclick="selectModeAndStart('speed')">② スピードモード<br><span style="font-size:11px;color:#aaa;">(縦10×横10・ドラッグ設置・30点先取)</span></button>
     </div>
 
-    <!-- ⑦ ゲームプレイ画面 (大画面 ＋ 右側操作GUI) -->
-    <div id="screen-game" class="screen" style="padding: 5px;">
-        <div id="game-layout">
-            <!-- 左側：大きくなったパズル画面 -->
-            <canvas id="game-canvas"></canvas>
-
-            <!-- 右側：操作・情報GUIパネル -->
-            <div class="side-panel">
-                <div>
-                    <div style="font-size:11px; color:#aaa;">プレイヤー</div>
-                    <strong id="hud-name" style="font-size:14px; color:#fff;">-</strong>
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#aaa;">スコア</div>
-                    <strong id="hud-score" style="font-size:18px; color:#ff00ff;">0点</strong>
-                </div>
-                <div>
-                    <div style="font-size:11px; color:#aaa;">情報</div>
-                    <span id="hud-info" style="font-size:12px;">-</span>
+    <!-- ⑦ ゲームプレイ画面 -->
+    <div id="screen-game" class="screen">
+        <div id="game-main-area">
+            <div id="game-layout">
+                <div class="canvas-wrap">
+                    <canvas id="game-canvas"></canvas>
                 </div>
 
-                <!-- 押しやすい大きめの操作ボタン群 -->
-                <div style="width:100%; display:flex; flex-direction:column; gap:8px; margin-top:5px;">
-                    <button class="gui-btn" onclick="hardDrop()">⏬ 落下</button>
-                    <button class="gui-btn" onclick="rotatePiece()" style="background:#440044; border-color:#ff00ff;">🔄 回転</button>
-                    <button class="gui-btn" onclick="location.reload()" style="background: #440000; border-color: #ff5555; font-size:13px; padding:10px 5px;">やめる</button>
+                <div class="side-panel">
+                    <div class="hud-box">
+                        <div style="font-size:10px; color:#aaa;">プレイヤー</div>
+                        <strong id="hud-name" style="font-size:12px; color:#fff;">-</strong>
+                    </div>
+                    <div class="hud-box">
+                        <div style="font-size:10px; color:#aaa;">得点</div>
+                        <strong id="hud-score" style="font-size:16px; color:#ff00ff;">0点</strong>
+                    </div>
+                    <div class="hud-box">
+                        <div style="font-size:10px; color:#aaa;">モード</div>
+                        <span id="hud-info" style="font-size:10px;">-</span>
+                    </div>
+
+                    <!-- ノーマルモード用：次に来るブロック -->
+                    <div id="next-box" class="hud-box" style="display:none;">
+                        <div style="font-size:10px; color:#88ff88;">NEXT</div>
+                        <canvas id="next-canvas" width="76" height="64"></canvas>
+                    </div>
+
+                    <!-- ノーマルモード用：操作ボタン -->
+                    <div id="normal-controls" style="width:100%; display:flex; flex-direction:column; gap:5px;">
+                        <div class="move-row">
+                            <button class="gui-btn" onclick="movePiece(-1)">◀</button>
+                            <button class="gui-btn" onclick="movePiece(1)">▶</button>
+                        </div>
+                        <button class="gui-btn" onclick="rotatePiece()" style="background:#440044; border-color:#ff00ff;">🔄 回転</button>
+                        <button class="gui-btn" onclick="hardDrop()">⏬ 落下</button>
+                    </div>
+
+                    <!-- スピードモード用：案内 -->
+                    <div id="speed-controls-note" class="hud-box" style="display:none; color:#ff88ff; font-size:10px; line-height:1.3;">
+                        下から選んで<br>ドラッグ設置<br>(回転不可)
+                    </div>
+
+                    <button class="gui-btn" onclick="location.reload()" style="background:#440000; border-color:#ff5555; font-size:11px; padding:6px 3px; margin-top:auto;">やめる</button>
                 </div>
+            </div>
+
+            <!-- スピードモード用：下部ブロック待機所（4枠） -->
+            <div id="dock-area">
+                <div class="dock-label">ブロック待機所（タップしたまま盤面へドラッグ＆ドロップ）</div>
+                <div id="dock-slots"></div>
             </div>
         </div>
     </div>
@@ -210,15 +376,20 @@
     <!-- ⑧ 結果発表画面 -->
     <div id="screen-result" class="screen">
         <h1 id="result-title">結果発表</h1>
-        <div id="result-list" style="width:90%; max-height:220px; overflow-y:auto; margin:15px 0; background:#222; border:1px solid #444; border-radius:5px; padding:10px; font-size:15px; text-align:center;"></div>
+        <div id="result-list" style="width:90%; max-height:240px; overflow-y:auto; margin:14px 0; background:#222; border:1px solid #444; border-radius:5px; padding:10px; font-size:15px; text-align:center;"></div>
         <button onclick="location.reload()" style="background:#005555; border-color:#00ffff;">タイトルに戻る</button>
     </div>
 </div>
 
+<!-- ドラッグ中表示用 -->
+<canvas id="drag-ghost"></canvas>
+
 <script>
     let myName = "";
-    let generatedBlocks = [];
-    let requiredBlockCount = 5;
+    let totalBlockCount = 5;
+    let myAssignedBlockCount = 5;
+    let myBuiltBlocks = [];
+    let sharedBlocks = [];
     let currentBuilderSize = 3;
     let builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
 
@@ -226,25 +397,95 @@
     let isHost = false;
     let roomKey = "";
     let maxPlayers = 1;
+    let playerIndex = 0; // 0:ホスト, 1..:ゲスト
     let connections = [];
     let guestConnection = null;
+    let remoteResults = {};
+
+    // JSONBin.io 連携用設定
+    let jsonbinKey = "";
+    let jsonbinBinId = "";
+
+    function readJsonBinSettings() {
+        jsonbinKey = (document.getElementById('jsonbin-key')?.value || '').trim();
+        jsonbinBinId = (document.getElementById('jsonbin-bin-id')?.value || '').trim();
+    }
+
+    async function syncToJsonBin(payloadObj) {
+        readJsonBinSettings();
+        if (!jsonbinKey) return null;
+        try {
+            if (!jsonbinBinId) {
+                const res = await fetch('https://api.jsonbin.io/v3/b', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': jsonbinKey,
+                        'X-Bin-Name': `wing_block_${roomKey || 'solo'}`
+                    },
+                    body: JSON.stringify(payloadObj)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    jsonbinBinId = data.metadata?.id || '';
+                    return data;
+                }
+            } else {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${jsonbinBinId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': jsonbinKey
+                    },
+                    body: JSON.stringify(payloadObj)
+                });
+                if (res.ok) return await res.json();
+            }
+        } catch (err) {
+            console.warn('JSONBin sync error:', err);
+        }
+        return null;
+    }
+
+    // 合計作成数を人数に振り分ける
+    function calcAssignedCount(total, players, idx) {
+        const base = Math.floor(total / players);
+        const rem = total % players;
+        return base + (idx < rem ? 1 : 0);
+    }
 
     function showScreen(screenId) {
+        if (screenId !== 'screen-game' && gameInterval) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+        }
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
-        if(screenId === 'screen-builder') initBuilder();
-        else if(screenId === 'screen-game') initGame();
-        else if(gameInterval) clearInterval(gameInterval);
+        if (screenId === 'screen-builder') initBuilder();
+        else if (screenId === 'screen-game') initGame();
     }
 
     function submitName() {
         const val = document.getElementById('player-name-input').value.trim();
-        if(!val.match(/^[ぁ-んー]{1,6}$/)) {
+        if (!val.match(/^[ぁ-んー]{1,6}$/)) {
             alert('ひらがな1〜6文字で入力してください');
             return;
         }
         myName = val;
-        generatedBlocks = [];
+        myBuiltBlocks = [];
+        sharedBlocks = [];
+        showScreen('screen-room');
+    }
+
+    function startSoloBuilder() {
+        readJsonBinSettings();
+        isHost = true;
+        maxPlayers = 1;
+        playerIndex = 0;
+        totalBlockCount = parseInt(document.getElementById('total-block-count').value, 10);
+        myAssignedBlockCount = totalBlockCount;
+        myBuiltBlocks = [];
+        sharedBlocks = [];
         showScreen('screen-builder');
     }
 
@@ -261,15 +502,19 @@
     }
 
     function renderBuilderGrid() {
-        document.getElementById('builder-instruction').innerText = `ブロックを作ろう (${generatedBlocks.length + 1}/${requiredBlockCount}個目)`;
+        document.getElementById('builder-instruction').innerText =
+            `ブロックを作ろう (${myBuiltBlocks.length + 1}/${myAssignedBlockCount}個目)`;
+        document.getElementById('builder-subinfo').innerText =
+            `合計${totalBlockCount}種類中・あなたの担当: ${myAssignedBlockCount}個`;
+
         const container = document.getElementById('builder-canvas-container');
         container.innerHTML = '';
 
         const gridDiv = document.createElement('div');
         gridDiv.className = currentBuilderSize === 3 ? 'grid-3x3' : 'grid-3x6';
 
-        for(let r=0; r<3; r++) {
-            for(let c=0; c<currentBuilderSize; c++) {
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < currentBuilderSize; c++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell-box' + (builderGrid[r][c] === 1 ? ' active' : '');
                 let cr = r, cc = c;
@@ -283,43 +528,57 @@
         container.appendChild(gridDiv);
     }
 
-    function completeCurrentBlock() {
+    async function completeCurrentBlock() {
         let hasCell = false;
         let minC = 6, maxC = -1, minR = 3, maxR = -1;
 
-        for(let r=0; r<3; r++) {
-            for(let c=0; c<currentBuilderSize; c++) {
-                if(builderGrid[r][c] === 1) {
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < currentBuilderSize; c++) {
+                if (builderGrid[r][c] === 1) {
                     hasCell = true;
-                    if(c < minC) minC = c;
-                    if(c > maxC) maxC = c;
-                    if(r < minR) minR = r;
-                    if(r > maxR) maxR = r;
+                    if (c < minC) minC = c;
+                    if (c > maxC) maxC = c;
+                    if (r < minR) minR = r;
+                    if (r > maxR) maxR = r;
                 }
             }
         }
 
-        if(!hasCell) {
+        if (!hasCell) {
             alert('1つ以上のマスをタップしてください');
             return;
         }
 
         let pieceMatrix = [];
-        for(let r = minR; r <= maxR; r++) {
+        for (let r = minR; r <= maxR; r++) {
             let rowArr = [];
-            for(let c = minC; c <= maxC; c++) {
+            for (let c = minC; c <= maxC; c++) {
                 rowArr.push(builderGrid[r][c]);
             }
             pieceMatrix.push(rowArr);
         }
 
-        generatedBlocks.push(pieceMatrix);
+        myBuiltBlocks.push(pieceMatrix);
+        sharedBlocks.push(pieceMatrix);
         builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
 
-        if(generatedBlocks.length < requiredBlockCount) {
+        if (myBuiltBlocks.length < myAssignedBlockCount) {
             renderBuilderGrid();
         } else {
-            showScreen('screen-room');
+            // 自分の担当分が完成
+            if (maxPlayers === 1 && !peer) {
+                showScreen('screen-mode');
+            } else if (isHost) {
+                await syncToJsonBin({ roomKey, totalBlockCount, blocks: sharedBlocks });
+                updateLobbyDisplay();
+                showScreen('screen-lobby');
+            } else if (guestConnection && guestConnection.open) {
+                guestConnection.send({ type: 'blocks', name: myName, blocks: myBuiltBlocks });
+                await syncToJsonBin({ roomKey, player: myName, blocks: myBuiltBlocks });
+                document.getElementById('lobby-status').innerText = '作成完了！ホストの開始待ち...';
+                document.getElementById('lobby-blocks-info').innerText = `あなたの作成ブロック: ${myBuiltBlocks.length}個送信済み`;
+                showScreen('screen-lobby');
+            }
         }
     }
 
@@ -327,41 +586,109 @@
         document.getElementById('join-box').style.display = 'flex';
     }
 
+    function updateLobbyDisplay() {
+        document.getElementById('key-display').innerText = `ルームキー: ${roomKey}`;
+        document.getElementById('lobby-status').innerText = 'ホスト: 参加待ち...';
+        document.getElementById('connection-count').innerText = `接続: ${connections.length + 1} / ${maxPlayers}名（全${totalBlockCount}種）`;
+        document.getElementById('lobby-blocks-info').innerText = `現在の共有ブロック数: ${sharedBlocks.length}個`;
+        document.getElementById('btn-start-game').style.display = 'block';
+    }
+
+    function handlePeerMessage(data, senderConn) {
+        if (!data || !data.type) return;
+        if (data.type === 'room_config') {
+            totalBlockCount = data.totalBlockCount || 5;
+            maxPlayers = data.maxPlayers || 2;
+            playerIndex = data.playerIndex || 1;
+            myAssignedBlockCount = calcAssignedCount(totalBlockCount, maxPlayers, playerIndex);
+            myBuiltBlocks = [];
+            sharedBlocks = [];
+            showScreen('screen-builder');
+        } else if (data.type === 'blocks' && Array.isArray(data.blocks)) {
+            sharedBlocks.push(...data.blocks);
+            if (isHost) {
+                updateLobbyDisplay();
+                connections.forEach(c => {
+                    if (c.open) c.send({ type: 'sync_blocks', blocks: sharedBlocks });
+                });
+            }
+        } else if (data.type === 'sync_blocks' && Array.isArray(data.blocks)) {
+            sharedBlocks = data.blocks;
+            document.getElementById('lobby-blocks-info').innerText = `現在の共有ブロック数: ${sharedBlocks.length}個`;
+        } else if (data.type === 'start_mode') {
+            showScreen('screen-mode');
+        } else if (data.type === 'start_game') {
+            currentMode = data.mode || 'normal';
+            showScreen('screen-game');
+        } else if (data.type === 'result') {
+            remoteResults[data.name] = { score: data.score, status: data.status };
+            if (isHost) {
+                connections.forEach(c => {
+                    if (c !== senderConn && c.open) c.send(data);
+                });
+            }
+            renderResultList();
+        }
+    }
+
     function setupAsHost() {
+        readJsonBinSettings();
         isHost = true;
-        maxPlayers = parseInt(document.getElementById('player-count').value);
+        remoteResults = {};
+        totalBlockCount = parseInt(document.getElementById('total-block-count').value, 10);
+        maxPlayers = parseInt(document.getElementById('player-count').value, 10);
+        playerIndex = 0;
+        myAssignedBlockCount = calcAssignedCount(totalBlockCount, maxPlayers, 0);
+        myBuiltBlocks = [];
+        sharedBlocks = [];
         roomKey = Math.floor(1000 + Math.random() * 9000).toString();
 
         try {
             peer = new Peer('wing_block_' + roomKey);
-            peer.on('open', () => {
-                document.getElementById('key-display').innerText = `ルームキー: ${roomKey}`;
-                document.getElementById('lobby-status').innerText = 'ホスト: 参加待ち...';
-                document.getElementById('connection-count').innerText = `接続: 1 / ${maxPlayers}名`;
-                document.getElementById('btn-start-game').style.display = 'block';
-                showScreen('screen-lobby');
+            peer.on('open', async () => {
+                await syncToJsonBin({ roomKey, totalBlockCount, maxPlayers, blocks: [] });
+                if (maxPlayers === 1) {
+                    showScreen('screen-builder');
+                } else {
+                    updateLobbyDisplay();
+                    showScreen('screen-lobby');
+                }
             });
             peer.on('error', () => {
                 alert('ルーム作成エラー。再試行してください。');
             });
             peer.on('connection', (c) => {
+                if (connections.length + 1 >= maxPlayers) {
+                    c.on('open', () => {
+                        c.send({ type: 'full' });
+                        setTimeout(() => c.close(), 200);
+                    });
+                    return;
+                }
+                const assignedIdx = connections.length + 1;
                 connections.push(c);
-                document.getElementById('connection-count').innerText = `接続: ${connections.length + 1} / ${maxPlayers}名`;
-                c.on('data', (data) => {
-                    if(data.type === 'blocks') {
-                        generatedBlocks.push(...data.blocks);
-                    }
+                c.on('open', () => {
+                    c.send({
+                        type: 'room_config',
+                        totalBlockCount,
+                        maxPlayers,
+                        playerIndex: assignedIdx
+                    });
                 });
+                updateLobbyDisplay();
+                c.on('data', (data) => handlePeerMessage(data, c));
             });
-        } catch(e) {
+        } catch (e) {
             alert('通信モジュールの初期化エラー');
         }
     }
 
     function joinAsGuest() {
+        readJsonBinSettings();
         isHost = false;
+        remoteResults = {};
         const key = document.getElementById('room-key-input').value.trim();
-        if(key.length !== 4) {
+        if (!/^\d{4}$/.test(key)) {
             alert('4桁のルームキーを入力してください');
             return;
         }
@@ -373,85 +700,209 @@
                 guestConnection = peer.connect('wing_block_' + roomKey);
                 guestConnection.on('open', () => {
                     document.getElementById('key-display').innerText = `ルーム ${roomKey} 接続成功！`;
-                    document.getElementById('lobby-status').innerText = 'ホストの開始待ち...';
+                    document.getElementById('lobby-status').innerText = 'ホストの設定受信中...';
                     document.getElementById('btn-start-game').style.display = 'none';
-                    guestConnection.send({ type: 'blocks', blocks: generatedBlocks });
                     showScreen('screen-lobby');
+                });
+                guestConnection.on('data', (data) => {
+                    if (data && data.type === 'full') {
+                        alert('ルームが満員です。');
+                        location.reload();
+                        return;
+                    }
+                    handlePeerMessage(data, guestConnection);
                 });
                 guestConnection.on('error', () => {
                     alert('ルームに接続できませんでした。');
                 });
             });
-        } catch(e) {
+        } catch (e) {
             alert('接続処理エラー');
         }
     }
 
     function proceedToModeSelect() {
-        if(isHost) {
-            connections.forEach(c => c.send({ type: 'start_mode' }));
+        if (isHost) {
+            connections.forEach(c => {
+                if (c.open) c.send({ type: 'start_mode' });
+            });
         }
         showScreen('screen-mode');
     }
 
+    function selectModeAndStart(mode) {
+        currentMode = mode;
+        if (isHost) {
+            connections.forEach(c => {
+                if (c.open) c.send({ type: 'start_game', mode });
+            });
+        } else if (guestConnection && guestConnection.open) {
+            guestConnection.send({ type: 'start_game', mode });
+        }
+        showScreen('screen-game');
+    }
+
+    // --- 回転ユーティリティ（90° / 180° / 270° / 360°） ---
+    function rotateMatrix90(matrix) {
+        return matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
+    }
+
+    function applyRandomAngle(matrix) {
+        const angles = [90, 180, 270, 360];
+        const angle = angles[Math.floor(Math.random() * angles.length)];
+        const steps = (angle / 90) % 4;
+        let result = matrix.map(row => [...row]);
+        for (let i = 0; i < steps; i++) {
+            result = rotateMatrix90(result);
+        }
+        return { matrix: result, angle };
+    }
+
+    function getActiveBlockPool() {
+        if (sharedBlocks.length > 0) return sharedBlocks;
+        if (myBuiltBlocks.length > 0) return myBuiltBlocks;
+        return [
+            [[1, 1], [1, 1]],
+            [[1, 1, 1]],
+            [[1, 1, 0], [0, 1, 1]]
+        ];
+    }
+
     // --- メインゲーム関連 ---
     let canvas, ctx;
-    let boardWidth = 10, boardHeight = 20, blockSize = 23; // 画面を大きく調整
-    let board = [], score = 0, currentPiece = null;
+    let nextCanvas, nextCtx;
+    let boardWidth = 10, boardHeight = 20, blockSize = 22;
+    let board = [], score = 0, currentPiece = null, nextPiece = null;
     let gameInterval = null;
+    let currentIntervalMs = 750;
     let currentMode = 'normal';
 
+    // スピードモード用：待機所（4枠）＆ドラッグ状態
+    let dockPieces = [null, null, null, null];
+    let draggingDockIndex = -1;
+    let dragMatrix = null;
+
     function initGame() {
-        document.getElementById('hud-name').innerText = myName;
+        document.getElementById('hud-name').innerText = myName || 'プレイヤー';
         canvas = document.getElementById('game-canvas');
         ctx = canvas.getContext('2d');
-        
-        if(currentMode === 'normal') {
-            boardWidth = 10; boardHeight = 20; blockSize = 22;
-            document.getElementById('hud-info').innerText = 'スピードUP制';
+        nextCanvas = document.getElementById('next-canvas');
+        nextCtx = nextCanvas.getContext('2d');
+
+        const dockArea = document.getElementById('dock-area');
+        const nextBox = document.getElementById('next-box');
+        const normalControls = document.getElementById('normal-controls');
+        const speedNote = document.getElementById('speed-controls-note');
+
+        // 画面高さに合わせてブロックサイズを自動計算（見切れ防止＆大きめ表示）
+        const containerHeight = document.getElementById('container').clientHeight || 700;
+        const containerWidth = document.getElementById('container').clientWidth || 390;
+        const availableWidth = Math.max(180, containerWidth - 150);
+
+        if (currentMode === 'normal') {
+            boardWidth = 10;
+            boardHeight = 20;
+            const maxByHeight = Math.floor((containerHeight - 28) / boardHeight);
+            const maxByWidth = Math.floor(availableWidth / boardWidth);
+            blockSize = Math.max(16, Math.min(26, maxByHeight, maxByWidth));
+
+            currentIntervalMs = 750;
+            document.getElementById('hud-info').innerText = 'ノーマル(落下)';
+            dockArea.classList.remove('active');
+            nextBox.style.display = 'block';
+            normalControls.style.display = 'flex';
+            speedNote.style.display = 'none';
         } else {
-            boardWidth = 10; boardHeight = 10; blockSize = 32;
-            document.getElementById('hud-info').innerText = '目標: 30点';
+            boardWidth = 10;
+            boardHeight = 10;
+            const maxByHeight = Math.floor((containerHeight - 126) / boardHeight);
+            const maxByWidth = Math.floor(availableWidth / boardWidth);
+            blockSize = Math.max(20, Math.min(34, maxByHeight, maxByWidth));
+
+            document.getElementById('hud-info').innerText = 'スピード(目標30点)';
+            dockArea.classList.add('active');
+            nextBox.style.display = 'none';
+            normalControls.style.display = 'none';
+            speedNote.style.display = 'block';
         }
-        
+
         canvas.width = boardWidth * blockSize;
         canvas.height = boardHeight * blockSize;
-        
+
         board = Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0));
         score = 0;
         document.getElementById('hud-score').innerText = `${score}点`;
 
-        spawnPiece();
-        if(gameInterval) clearInterval(gameInterval);
-        gameInterval = setInterval(updateGame, 800);
+        if (gameInterval) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+        }
+
+        if (currentMode === 'normal') {
+            nextPiece = createRandomNormalPiece();
+            spawnNormalPiece();
+            drawGame();
+            drawNextPiece();
+            resetGameInterval(currentIntervalMs);
+        } else {
+            initSpeedDock();
+            drawGame();
+        }
     }
 
-    function startGame(mode) {
-        currentMode = mode;
-        showScreen('screen-game');
+    function createRandomNormalPiece() {
+        const pool = getActiveBlockPool();
+        const template = pool[Math.floor(Math.random() * pool.length)];
+        return template.map(row => [...row]);
     }
 
-    function spawnPiece() {
-        const template = (generatedBlocks.length > 0) 
-            ? generatedBlocks[Math.floor(Math.random() * generatedBlocks.length)]
-            : [[1,1],[1,1]];
-
+    function spawnNormalPiece() {
+        const matrix = nextPiece || createRandomNormalPiece();
+        nextPiece = createRandomNormalPiece();
         currentPiece = {
-            matrix: template,
-            x: Math.floor(boardWidth / 2) - Math.floor(template[0].length / 2),
+            matrix,
+            x: Math.floor(boardWidth / 2) - Math.floor(matrix[0].length / 2),
             y: 0
         };
+        drawNextPiece();
     }
 
-    function updateGame() {
-        if(!currentPiece) return;
+    function drawNextPiece() {
+        if (!nextCtx) return;
+        nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+        if (!nextPiece) return;
+
+        const rows = nextPiece.length;
+        const cols = nextPiece[0].length;
+        const cell = Math.min(13, Math.floor(64 / Math.max(rows, 2)), Math.floor(72 / Math.max(cols, 2)));
+        const offsetX = Math.floor((nextCanvas.width - cols * cell) / 2);
+        const offsetY = Math.floor((nextCanvas.height - rows * cell) / 2);
+
+        nextCtx.fillStyle = '#00ff88';
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (nextPiece[r][c] === 1) {
+                    nextCtx.fillRect(offsetX + c * cell, offsetY + r * cell, cell - 1, cell - 1);
+                }
+            }
+        }
+    }
+
+    function resetGameInterval(ms) {
+        if (gameInterval) clearInterval(gameInterval);
+        currentIntervalMs = Math.max(180, ms);
+        gameInterval = setInterval(updateNormalGame, currentIntervalMs);
+    }
+
+    function updateNormalGame() {
+        if (currentMode !== 'normal' || !currentPiece) return;
         currentPiece.y++;
-        if(checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
+        if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
             currentPiece.y--;
-            mergePiece();
+            mergeMatrix(currentPiece.x, currentPiece.y, currentPiece.matrix);
             clearLines();
-            spawnPiece();
-            if(checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
+            spawnNormalPiece();
+            if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
                 endGame('ゲームオーバー');
                 return;
             }
@@ -459,54 +910,204 @@
         drawGame();
     }
 
-    // ⏬ ハードドロップ（落下ボタン）
+    function movePiece(dir) {
+        if (currentMode !== 'normal' || !currentPiece) return;
+        const nx = currentPiece.x + dir;
+        if (!checkCollision(nx, currentPiece.y, currentPiece.matrix)) {
+            currentPiece.x = nx;
+            drawGame();
+        }
+    }
+
     function hardDrop() {
-        if(!currentPiece) return;
-        while(!checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.matrix)) {
+        if (currentMode !== 'normal' || !currentPiece) return;
+        while (!checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.matrix)) {
             currentPiece.y++;
         }
-        mergePiece();
+        mergeMatrix(currentPiece.x, currentPiece.y, currentPiece.matrix);
         clearLines();
-        spawnPiece();
-        if(checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
+        spawnNormalPiece();
+        if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
             endGame('ゲームオーバー');
             return;
         }
         drawGame();
     }
 
-    // 🔄 回転ボタン
     function rotatePiece() {
-        if(!currentPiece) return;
-        let m = currentPiece.matrix;
-        let rot = m[0].map((_, i) => m.map(row => row[i]).reverse());
-        if(!checkCollision(currentPiece.x, currentPiece.y, rot)) {
+        if (currentMode !== 'normal' || !currentPiece) return;
+        const rot = rotateMatrix90(currentPiece.matrix);
+        if (!checkCollision(currentPiece.x, currentPiece.y, rot)) {
             currentPiece.matrix = rot;
             drawGame();
         }
     }
 
-    function checkCollision(px, py, matrix) {
-        for(let r=0; r<matrix.length; r++) {
-            for(let c=0; c<matrix[0].length; c++) {
-                if(matrix[r][c] === 1) {
-                    let nx = px + c;
-                    let ny = py + r;
-                    if(nx < 0 || nx >= boardWidth || ny >= boardHeight) return true;
-                    if(ny >= 0 && board[ny][nx] !== 0) return true;
+    // --- スピードモード：待機所＆ドラッグ設置 ---
+    function createDockItem() {
+        const pool = getActiveBlockPool();
+        const raw = pool[Math.floor(Math.random() * pool.length)];
+        const rotated = applyRandomAngle(raw);
+        return {
+            matrix: rotated.matrix,
+            angle: rotated.angle
+        };
+    }
+
+    function initSpeedDock() {
+        dockPieces = [0, 1, 2, 3].map(() => createDockItem());
+        renderDockSlots();
+    }
+
+    function renderDockSlots() {
+        const slotsWrap = document.getElementById('dock-slots');
+        slotsWrap.innerHTML = '';
+
+        dockPieces.forEach((item, idx) => {
+            const slot = document.createElement('div');
+            slot.className = 'dock-slot';
+            slot.dataset.index = idx;
+
+            if (item && idx !== draggingDockIndex) {
+                const pCanvas = document.createElement('canvas');
+                const rows = item.matrix.length;
+                const cols = item.matrix[0].length;
+                const cell = Math.min(13, Math.floor(54 / Math.max(rows, 2)), Math.floor(68 / Math.max(cols, 2)));
+                pCanvas.width = cols * cell;
+                pCanvas.height = rows * cell;
+                const pCtx = pCanvas.getContext('2d');
+                pCtx.fillStyle = '#ff00ff';
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (item.matrix[r][c] === 1) {
+                            pCtx.fillRect(c * cell, r * cell, cell - 1, cell - 1);
+                        }
+                    }
+                }
+                slot.appendChild(pCanvas);
+
+                slot.addEventListener('touchstart', (e) => {
+                    if (currentMode !== 'speed' || !e.touches.length) return;
+                    e.preventDefault();
+                    startDraggingFromDock(idx, e.touches[0].clientX, e.touches[0].clientY);
+                }, { passive: false });
+            }
+            slotsWrap.appendChild(slot);
+        });
+    }
+
+    function startDraggingFromDock(idx, clientX, clientY) {
+        const item = dockPieces[idx];
+        if (!item) return;
+        draggingDockIndex = idx;
+        dragMatrix = item.matrix.map(r => [...r]);
+        renderDockSlots();
+
+        const ghost = document.getElementById('drag-ghost');
+        const gCtx = ghost.getContext('2d');
+        const rows = dragMatrix.length;
+        const cols = dragMatrix[0].length;
+        ghost.width = cols * blockSize;
+        ghost.height = rows * blockSize;
+        gCtx.clearRect(0, 0, ghost.width, ghost.height);
+        gCtx.fillStyle = 'rgba(255, 0, 255, 0.85)';
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (dragMatrix[r][c] === 1) {
+                    gCtx.fillRect(c * blockSize, r * blockSize, blockSize - 1, blockSize - 1);
+                }
+            }
+        }
+        ghost.style.display = 'block';
+        ghost.style.left = clientX + 'px';
+        ghost.style.top = clientY + 'px';
+    }
+
+    function moveDragGhost(clientX, clientY) {
+        if (draggingDockIndex < 0 || !dragMatrix) return;
+        const ghost = document.getElementById('drag-ghost');
+        ghost.style.left = clientX + 'px';
+        ghost.style.top = clientY + 'px';
+
+        const pos = clientToBoardCell(clientX, clientY, dragMatrix);
+        drawGame(pos);
+    }
+
+    function clientToBoardCell(clientX, clientY, matrix) {
+        if (!canvas) return null;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const bx = (clientX - rect.left) * scaleX;
+        const by = (clientY - rect.top) * scaleY;
+
+        const cols = matrix[0].length;
+        const rows = matrix.length;
+        const col = Math.round(bx / blockSize - cols / 2);
+        const row = Math.round(by / blockSize - rows / 2);
+        return { x: col, y: row };
+    }
+
+    function finishDraggingToBoard(clientX, clientY) {
+        const ghost = document.getElementById('drag-ghost');
+        ghost.style.display = 'none';
+
+        if (draggingDockIndex < 0 || !dragMatrix) return;
+        const pos = clientToBoardCell(clientX, clientY, dragMatrix);
+
+        if (pos && !checkCollision(pos.x, pos.y, dragMatrix)) {
+            mergeMatrix(pos.x, pos.y, dragMatrix);
+            dockPieces[draggingDockIndex] = createDockItem();
+            clearLines();
+            if (!hasAnyPlaceableDockPiece()) {
+                endGame('ゲームオーバー');
+                draggingDockIndex = -1;
+                dragMatrix = null;
+                return;
+            }
+        }
+
+        draggingDockIndex = -1;
+        dragMatrix = null;
+        renderDockSlots();
+        drawGame();
+    }
+
+    function hasAnyPlaceableDockPiece() {
+        for (const item of dockPieces) {
+            if (!item) continue;
+            for (let r = 0; r < boardHeight; r++) {
+                for (let c = 0; c < boardWidth; c++) {
+                    if (!checkCollision(c, r, item.matrix)) return true;
                 }
             }
         }
         return false;
     }
 
-    function mergePiece() {
-        for(let r=0; r<currentPiece.matrix.length; r++) {
-            for(let c=0; c<currentPiece.matrix[0].length; c++) {
-                if(currentPiece.matrix[r][c] === 1) {
-                    let ny = currentPiece.y + r;
-                    let nx = currentPiece.x + c;
-                    if(ny >= 0) board[ny][nx] = 1;
+    function checkCollision(px, py, matrix) {
+        for (let r = 0; r < matrix.length; r++) {
+            for (let c = 0; c < matrix[0].length; c++) {
+                if (matrix[r][c] === 1) {
+                    let nx = px + c;
+                    let ny = py + r;
+                    if (nx < 0 || nx >= boardWidth || ny < 0 || ny >= boardHeight) return true;
+                    if (board[ny][nx] !== 0) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function mergeMatrix(px, py, matrix) {
+        for (let r = 0; r < matrix.length; r++) {
+            for (let c = 0; c < matrix[0].length; c++) {
+                if (matrix[r][c] === 1) {
+                    let ny = py + r;
+                    let nx = px + c;
+                    if (ny >= 0 && ny < boardHeight && nx >= 0 && nx < boardWidth) {
+                        board[ny][nx] = 1;
+                    }
                 }
             }
         }
@@ -514,68 +1115,161 @@
 
     function clearLines() {
         let lines = 0;
-        for(let r = boardHeight - 1; r >= 0; r--) {
-            if(board[r].every(v => v !== 0)) {
+        for (let r = boardHeight - 1; r >= 0; r--) {
+            if (board[r].every(v => v !== 0)) {
                 board.splice(r, 1);
                 board.unshift(Array(boardWidth).fill(0));
-                lines++; r++;
+                lines++;
+                r++;
             }
         }
-        if(lines > 0) {
-            score += lines;
+        if (lines > 0) {
+            score += lines * 10;
             document.getElementById('hud-score').innerText = `${score}点`;
-            if(currentMode === 'speed' && score >= 30) {
+            if (currentMode === 'speed' && score >= 30) {
                 endGame('🏆 YOU WIN!!');
                 return;
             }
+            if (currentMode === 'normal') {
+                resetGameInterval(750 - score * 12);
+            }
         }
     }
 
-    function endGame(statusText) {
-        clearInterval(gameInterval);
-        showScreen('screen-result');
-        document.getElementById('result-title').innerText = statusText;
-        document.getElementById('result-list').innerHTML = `<strong>${myName}</strong><br>スコア: ${score}点`;
+    function renderResultList() {
+        const listEl = document.getElementById('result-list');
+        const entries = Object.entries(remoteResults).map(([name, info]) => ({
+            name,
+            score: info.score,
+            status: info.status
+        }));
+        entries.sort((a, b) => b.score - a.score);
+        listEl.innerHTML = entries.map((item, idx) =>
+            `<div class="result-item"><strong>${idx + 1}位: ${item.name}</strong> — ${item.score}点 <span style="font-size:12px;color:#aaa;">(${item.status})</span></div>`
+        ).join('');
     }
 
-    function drawGame() {
+    async function endGame(statusText) {
+        if (gameInterval) {
+            clearInterval(gameInterval);
+            gameInterval = null;
+        }
+        document.getElementById('drag-ghost').style.display = 'none';
+        draggingDockIndex = -1;
+        dragMatrix = null;
+
+        const playerLabel = myName || 'プレイヤー';
+        remoteResults[playerLabel] = { score, status: statusText };
+
+        const payload = { type: 'result', name: playerLabel, score, status: statusText };
+        if (isHost) {
+            connections.forEach(c => {
+                if (c.open) c.send(payload);
+            });
+        } else if (guestConnection && guestConnection.open) {
+            guestConnection.send(payload);
+        }
+        await syncToJsonBin({ roomKey, result: payload, allResults: remoteResults });
+
+        showScreen('screen-result');
+        document.getElementById('result-title').innerText = statusText;
+        renderResultList();
+    }
+
+    function drawGame(ghostPos = null) {
+        if (!ctx) return;
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        for(let r=0; r<boardHeight; r++) {
-            for(let c=0; c<boardWidth; c++) {
-                if(board[r][c] !== 0) {
+        // 薄いグリッド線
+        ctx.strokeStyle = '#181818';
+        ctx.lineWidth = 1;
+        for (let r = 0; r <= boardHeight; r++) {
+            ctx.beginPath();
+            ctx.moveTo(0, r * blockSize);
+            ctx.lineTo(canvas.width, r * blockSize);
+            ctx.stroke();
+        }
+        for (let c = 0; c <= boardWidth; c++) {
+            ctx.beginPath();
+            ctx.moveTo(c * blockSize, 0);
+            ctx.lineTo(c * blockSize, canvas.height);
+            ctx.stroke();
+        }
+
+        // 設置済みブロック
+        for (let r = 0; r < boardHeight; r++) {
+            for (let c = 0; c < boardWidth; c++) {
+                if (board[r][c] !== 0) {
                     ctx.fillStyle = '#00ffff';
                     ctx.fillRect(c * blockSize, r * blockSize, blockSize - 1, blockSize - 1);
                 }
             }
         }
 
-        if(currentPiece) {
+        // ノーマルモードの落下ブロック
+        if (currentMode === 'normal' && currentPiece) {
             ctx.fillStyle = '#ff00ff';
-            for(let r=0; r<currentPiece.matrix.length; r++) {
-                for(let c=0; c<currentPiece.matrix[0].length; c++) {
-                    if(currentPiece.matrix[r][c] === 1) {
+            for (let r = 0; r < currentPiece.matrix.length; r++) {
+                for (let c = 0; c < currentPiece.matrix[0].length; c++) {
+                    if (currentPiece.matrix[r][c] === 1) {
                         let px = (currentPiece.x + c) * blockSize;
                         let py = (currentPiece.y + r) * blockSize;
-                        if(py >= 0) ctx.fillRect(px, py, blockSize - 1, blockSize - 1);
+                        if (py >= 0) ctx.fillRect(px, py, blockSize - 1, blockSize - 1);
+                    }
+                }
+            }
+        }
+
+        // スピードモードのドラッグ中プレビュー
+        if (currentMode === 'speed' && dragMatrix && ghostPos) {
+            const valid = !checkCollision(ghostPos.x, ghostPos.y, dragMatrix);
+            ctx.fillStyle = valid ? 'rgba(0, 255, 136, 0.45)' : 'rgba(255, 60, 60, 0.45)';
+            for (let r = 0; r < dragMatrix.length; r++) {
+                for (let c = 0; c < dragMatrix[0].length; c++) {
+                    if (dragMatrix[r][c] === 1) {
+                        let px = (ghostPos.x + c) * blockSize;
+                        let py = (ghostPos.y + r) * blockSize;
+                        ctx.fillRect(px, py, blockSize - 1, blockSize - 1);
                     }
                 }
             }
         }
     }
 
-    // タッチ・スワイプ操作（補助用）
+    // グローバルタッチ操作（スピードモードのドラッグ＆ノーマルモードの横スワイプ）
     let startX = 0;
-    window.addEventListener('touchstart', e => { if(e.touches.length) startX = e.touches[0].clientX; });
-    window.addEventListener('touchmove', e => {
-        if(!currentPiece || !e.touches.length) return;
-        let dx = e.touches[0].clientX - startX;
-        if(Math.abs(dx) > 25) {
-            if(dx > 0 && !checkCollision(currentPiece.x + 1, currentPiece.y, currentPiece.matrix)) currentPiece.x++;
-            if(dx < 0 && !checkCollision(currentPiece.x - 1, currentPiece.y, currentPiece.matrix)) currentPiece.x--;
+    window.addEventListener('touchstart', e => {
+        if (!document.getElementById('screen-game').classList.contains('active')) return;
+        if (currentMode === 'normal' && e.touches.length) {
             startX = e.touches[0].clientX;
-            drawGame();
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', e => {
+        if (!document.getElementById('screen-game').classList.contains('active')) return;
+        if (!e.touches.length) return;
+        const t = e.touches[0];
+
+        if (currentMode === 'speed' && draggingDockIndex >= 0) {
+            e.preventDefault();
+            moveDragGhost(t.clientX, t.clientY);
+            return;
+        }
+
+        if (currentMode === 'normal' && currentPiece) {
+            let dx = t.clientX - startX;
+            if (Math.abs(dx) > 24) {
+                movePiece(dx > 0 ? 1 : -1);
+                startX = t.clientX;
+            }
+        }
+    }, { passive: false });
+
+    window.addEventListener('touchend', e => {
+        if (currentMode === 'speed' && draggingDockIndex >= 0) {
+            const t = (e.changedTouches && e.changedTouches[0]) || { clientX: 0, clientY: 0 };
+            finishDraggingToBoard(t.clientX, t.clientY);
         }
     });
 </script>
