@@ -543,7 +543,7 @@ canvas#game-canvas {
 .scoreboard-list {
   width: 94%;
   max-width: 380px;
-  max-height: 340px;
+  max-height: 300px;
   overflow-y: auto;
   background: #14141c;
   border: 1px solid #00ffff;
@@ -571,7 +571,7 @@ canvas#game-canvas {
   <!-- ① タイトル画面 -->
   <div id="screen-title" class="screen active">
     <h1>■ ブロック崩し ■</h1>
-    <div class="version">Ver 3.1 (-WING-)</div>
+    <div class="version">Ver 3.0 (-WING-)</div>
     <button onclick="playSe('decide'); showScreen('screen-play-type')" style="background: #330033; border-color:#ff00ff; color:#ff00ff;">- スタート -</button>
     <button onclick="playSe('decide'); openScoreboardScreen('screen-title')" style="background: #152836; border-color:#00ffff; color:#00ffff;">☆ 共通スコアボード(上位10) ☆</button>
   </div>
@@ -654,7 +654,7 @@ canvas#game-canvas {
       <button onclick="playSe('decide'); distributeBlocksAndStartBuild()" style="background:#006644; border-color: #00ff88; font-weight: bold;">ブロック作成へ進む</button>
     </div>
     <div id="please-wait-box" style="display: none; flex-direction:column; align-items:center; text-align:center;">
-      <h1 style="color:#ffd700; font-size: 24px;">Please wait</h1>
+      <h1 style="color:#ffd700; font-size: 24px;">プリーズウェイト</h1>
       <p class="note-text" style="font-size:13px; color: #ccc;">ホストがブロックの種類数とゲームモードを選択中です...</p>
     </div>
   </div>
@@ -673,7 +673,7 @@ canvas#game-canvas {
   <div id="screen-ready" class="screen">
     <h1 id="ready-title">ブロック作成確認</h1>
     <p id="ready-status-text" style="font-size: 14px; color:#ccc; text-align:center; margin: 10px 0;"></p>
-    <button id="btn-ready-trigger" class="dim-btn" onclick="openTargetScoreDialogForAll()" disabled>Ready</button>
+    <button id="btn-ready-trigger" class="dim-btn" onclick="openTargetScoreDialogForAll()" disabled>レディー</button>
   </div>
 
   <!-- ⑨ ゲームプレイ画面 -->
@@ -711,7 +711,6 @@ canvas#game-canvas {
             <div id="hud-info" class="hud-label">ノーマル</div>
           </div>
         </div>
-        <!-- 修正: onclickを削除し onpointerdown に統一して2重発火を防止 -->
         <div id="normal-controls" class="big-controls-bar">
           <button type="button" class="big-gui-btn" onpointerdown="onMoveBtnTouch(event, -1)">左</button>
           <button type="button" class="big-gui-btn" onpointerdown="onMoveBtnTouch(event, 1)">右</button>
@@ -748,7 +747,7 @@ canvas#game-canvas {
       </div>
       <div id="guest-result-actions" style="display: none; width:100%; flex-direction: column; align-items:center;">
         <p id="guest-result-wait-msg" class="note-text" style="color:#ffd700; font-size: 13px;">ホストが再戦か終了を選択中です...</p>
-        <button id="btn-guest-rematch-ready" class="lit-btn" style="display:none;" onclick="guestTapRematchReady()">Ready</button>
+        <button id="btn-guest-rematch-ready" class="lit-btn" style="display:none;" onclick="guestTapRematchReady()">レディー</button>
       </div>
     </div>
   </div>
@@ -759,6 +758,7 @@ canvas#game-canvas {
     <p id="scoreboard-source-note" class="note-text" style="color:#00ff88;"></p>
     <div id="scoreboard-list" class="scoreboard-list"></div>
     <button onclick="playSe('decide'); refreshScoreboardView()" style="background: #004444; border-color:#00ffff; padding: 9px 14px; font-size:13px;">更新する</button>
+    <button onclick="resetScoreboardWithPassword()" style="background: #4a1414; border-color:#ff6666; color:#ffaaaa; padding: 9px 14px; font-size:13px;">スコアリセット</button>
     <button onclick="playSe('cursor'); closeScoreboardScreen()" style="border-color:#ff5555; color:#ff5555; margin-top:10px;">もどる</button>
   </div>
 </div>
@@ -811,7 +811,7 @@ canvas#game-canvas {
 // =========================================================================
 // BGM(MP3 または WAV形式) & 効果音(8種類)設定
 // =========================================================================
-// 修正: コメントアウトを解除してBGMファイルを登録（アップロード済みの曲数・拡張子に合わせて調整してください）
+// アップロード済みのBGMファイル名・曲数に合わせて調整してください
 const BGM_TRACKS = [
   "./bgm1.mp3",
   "./bgm2.mp3",
@@ -992,11 +992,12 @@ document.addEventListener('pointerdown', () => {
 }, { once: false });
 
 // =========================================================================
-// JSONBin 固定設定 (画面からは変更不可)
+// JSONBin 固定設定 (画面からは変更不可) & スコアリセット設定
 // =========================================================================
 const DEFAULT_JSONBIN_ID = "";
 const DEFAULT_JSONBIN_MASTER_KEY = "";
 const LOCAL_SCOREBOARD_KEY = "wing_block_local_scoreboard_v1";
+const SCORE_RESET_PASSWORD = "1209";
 
 function getJsonBinConfig() {
   return {
@@ -1069,6 +1070,21 @@ function normalizeTop10Scores(list) {
     .filter(item => item && typeof item.score === "number")
     .sort((a, b) => b.score - a.score)
     .slice(0, 10);
+}
+
+async function resetScoreboardWithPassword() {
+  playSe('cursor');
+  const inputPass = prompt("スコアリセット用のパスワードを入力してください:");
+  if (inputPass === null) return; // キャンセル時
+  if (inputPass !== SCORE_RESET_PASSWORD) {
+    playSe('gameOver');
+    alert("パスワードが正しくありません。リセットを中止しました。");
+    return;
+  }
+  playSe('decide');
+  const saveRes = await saveGlobalScores([]);
+  await refreshScoreboardView();
+  alert(`スコアをリセットしました。(${saveRes.source})`);
 }
 
 let previousScreenBeforeScoreboard = "screen-title";
@@ -2728,7 +2744,6 @@ function drawGame(ghostPos = null) {
 let startX = 0;
 window.addEventListener('touchstart', e => {
   if (gameFinished || waitingForOthersOver || !document.getElementById('screen-game').classList.contains('active')) return;
-  // 修正: ボタン操作時のスワイプ誤反応を防止
   if (e.target && e.target.closest('button')) return;
   if (currentMode === 'normal' && e.touches.length) {
     startX = e.touches[0].clientX;
