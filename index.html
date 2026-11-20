@@ -215,6 +215,7 @@ select { cursor: pointer; }
   border-radius: 6px;
   padding: 4px;
   touch-action: none;
+  position: relative;
 }
 #left-next-box {
   display: none;
@@ -260,7 +261,47 @@ canvas#game-canvas {
   touch-action: none;
 }
 
-/* スピードモード / スコアチャレンジ用: 下部ブロック待機所(4枠) */
+/* 画面中央のリタイア待機オーバーレイ */
+#retire-wait-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 18, 0.82);
+  z-index: 1700;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+}
+#retire-wait-overlay.active {
+  display: flex;
+}
+.retire-big-text {
+  font-size: 54px;
+  font-weight: bold;
+  color: #ff4444;
+  text-shadow: 0 0 20px rgba(255, 68, 68, 0.85), 0 0 36px #000;
+  letter-spacing: 6px;
+  margin-bottom: 14px;
+  animation: retirePop 0.35s ease-out;
+}
+.retire-sub-text {
+  font-size: 15px;
+  color: #ffd700;
+  background: rgba(30, 30, 45, 0.9);
+  border: 1px solid #ffd700;
+  border-radius: 8px;
+  padding: 10px 16px;
+  line-height: 1.5;
+}
+@keyframes retirePop {
+  0% { transform: scale(0.5); opacity: 0; }
+  80% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* スピードモード / スコアチャレンジ用: 下部ブロック待機所 (4枠) */
 #dock-area {
   display: none;
   width: 100%;
@@ -533,13 +574,17 @@ canvas#game-canvas {
   align-items: center;
 }
 #sequential-announcement {
-  min-height: 68px;
+  min-height: 78px;
   font-size: 18px;
   font-weight: bold;
   color: #ffd700;
   text-align: center;
   margin: 6px 0;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 .result-item {
   padding: 7px 10px;
@@ -552,7 +597,7 @@ canvas#game-canvas {
 .result-item.rank-1 {
   color: #ffd700;
   font-weight: bold;
-  background: rgba(255, 215, 0, 0.12);
+  background: rgba(255, 215, 0, 0.14);
   border-radius: 5px;
 }
 .result-item:last-child { border-bottom: none; }
@@ -577,7 +622,7 @@ canvas#game-canvas {
   margin: 4px 0;
 }
 
-/* 共通スコアボード (上位10件・ランクイン登録) */
+/* 共通スコアボード */
 .rankin-entry-box {
   width: 92%;
   max-width: 340px;
@@ -625,9 +670,9 @@ canvas#game-canvas {
   <!-- ① タイトル画面 -->
   <div id="screen-title" class="screen active">
     <h1>■ ブロック崩し ■</h1>
-    <div class="version">Ver 3.1 (-WING-)</div>
+    <div class="version">Ver 3.2 (-WING-)</div>
     <button onclick="playSe('decide'); showScreen('screen-play-type')" style="background: #330033; border-color:#ff00ff; color: #ff00ff;">- スタート -</button>
-    <button onclick="playSe('decide'); openScoreboardScreen('screen-title')" style="background: #152836; border-color:#00ffff; color:#00ffff;">☆ 共通スコアボード(上位10) ☆</button>
+    <button onclick="playSe('decide'); openScoreboardScreen('screen-title')" style="background: #152836; border-color:#00ffff; color: #00ffff;">☆ 共通スコアボード(上位10) ☆</button>
   </div>
 
   <!-- シングルプレイ/マルチプレイ選択画面 -->
@@ -635,7 +680,7 @@ canvas#game-canvas {
     <h1>プレイ人数タイプ選択</h1>
     <p class="note-text">シングルプレイまたはマルチプレイを選んでください</p>
     <button onclick="playSe('decide'); selectPlayType('single')" style="background: #004466; border-color:#00ffff; font-weight: bold;">シングルプレイ(1人)</button>
-    <button onclick="playSe('decide'); selectPlayType('multi')" style="background: #440044; border-color:#ff00ff; font-weight: bold;">マルチプレイ(通信対戦)</button>
+    <button onclick="playSe('decide'); selectPlayType('multi')" style="background: #440044; border-color: #ff00ff; font-weight: bold;">マルチプレイ(通信対戦)</button>
     <button onclick="playSe('cursor'); showScreen('screen-title')" style="border-color:#ff5555; color: #ff5555; margin-top: 14px;">もどる</button>
   </div>
 
@@ -656,7 +701,7 @@ canvas#game-canvas {
     <button onclick="playSe('decide'); showGuestJoinBox()" style="background: #440044;">ゲスト</button>
     <div id="guest-join-box" style="display: none; width: 100%; flex-direction:column; align-items:center; margin-top:8px;">
       <input type="text" id="room-key-input" placeholder="4桁の参加番号" maxlength="4" inputmode="numeric" oninput="playSe('cursor')">
-      <button onclick="joinAsGuest()" style="background:#005500;">参加する</button>
+      <button onclick="joinAsGuest()" style="background: #005500;">参加する</button>
     </div>
     <button onclick="playSe('cursor'); showScreen('screen-name')" style="border-color:#ff5555; color:#ff5555; margin-top: 14px;">もどる</button>
   </div>
@@ -676,7 +721,7 @@ canvas#game-canvas {
     <button onclick="playSe('cursor'); showScreen('screen-role')" style="border-color:#ff5555; color:#ff5555; margin-top: 12px;">もどる</button>
   </div>
 
-  <!-- ⑤ 参加番号表示・接続待ち・「次に」ボタン -->
+  <!-- ⑤ 参加番号表示,接続待ち・「次に」ボタン -->
   <div id="screen-lobby" class="screen">
     <div id="key-display" style="font-size: 28px; color: #00ff00; margin:8px 0; font-weight:bold;">参加番号:</div>
     <h3 id="lobby-status">接続待ち</h3>
@@ -688,7 +733,7 @@ canvas#game-canvas {
   <!-- ⑥ ブロック種類数&ゲームモード選択 -->
   <div id="screen-host-setup" class="screen">
     <div id="host-setup-controls" style="width:100%; display: flex; flex-direction:column; align-items:center;">
-      <h1>ブロック種類数&モード</h1>
+      <h1>ブロック種類数&amp;モード</h1>
       <label class="note-text">ブロックの種類数</label>
       <select id="total-block-count" onchange="playSe('cursor')">
         <option value="2">2種類</option>
@@ -761,6 +806,7 @@ canvas#game-canvas {
             <div id="hud-score" class="hud-val" style="color:#ff00ff;">0点</div>
           </div>
           <div class="hud-pill">
+            <div class="hud-label">状況</div>
             <div id="hud-target" class="hud-val" style="color:#ffd700; font-size:11px;">全員終了まで</div>
             <div id="hud-info" class="hud-label">ノーマル</div>
           </div>
@@ -772,7 +818,7 @@ canvas#game-canvas {
           <button type="button" class="big-gui-btn" onpointerdown="onDropBtnTouch(event)">落下</button>
         </div>
         <div id="speed-controls-bar" class="big-controls-bar" style="display:none;">
-          <div class="big-gui-btn" style="background: #261433; border-color:#ff88ff; font-size:13px; cursor: default;">
+          <div class="big-gui-btn" style="background: #261433; border-color:#ff88ff; font-size: 13px; cursor: default;">
             指より少し上に浮かべて設置(縦・横1列で消去/回転不可)
           </div>
         </div>
@@ -786,7 +832,7 @@ canvas#game-canvas {
     <div class="result-content">
       <h1 id="result-title">結果発表</h1>
       <div id="sequential-announcement"></div>
-      <div id="result-list" style="width:92%; max-height: 170px; overflow-y:auto; margin:6px 0 8px 0; background: rgba(24,24,32,0.92); border:1px solid #555; border-radius: 6px; padding: 6px; font-size: 13px; text-align:center;"></div>
+      <div id="result-list" style="width:92%; max-height: 170px; overflow-y:auto; margin:6px 0 8px 0; background: rgba(24,24,32,0.92); border:1px solid #555; border-radius: 6px; padding: 6px; text-align:center; font-size: 13px;"></div>
       <div id="rankin-entry-box" class="rankin-entry-box">
         <div id="rankin-message" style="font-size: 13px; font-weight:bold; color:#ffd700;">☆ 共通スコアボード 上位10位ランクイン! ☆</div>
         <p class="note-text" style="color:#ddd;">ランキングに載せる名前を自由に再入力できます</p>
@@ -806,7 +852,7 @@ canvas#game-canvas {
     </div>
   </div>
 
-  <!-- 共通スコアボード画面(上位10件) -->
+  <!-- 共通スコアボード画面 -->
   <div id="screen-scoreboard" class="screen">
     <h1>☆ 共通スコアボード(上位10)</h1>
     <p id="scoreboard-source-note" class="note-text" style="color:#00ff88;"></p>
@@ -815,6 +861,12 @@ canvas#game-canvas {
     <button onclick="resetScoreboardWithPassword()" style="background: #4a1414; border-color: #ff6666; color: #ffaaaa; padding: 9px 14px; font-size: 13px;">スコア reset / リセット</button>
     <button onclick="playSe('cursor'); closeScoreboardScreen()" style="border-color: #ff5555; color:#ff5555; margin-top: 10px;">もどる</button>
   </div>
+</div>
+
+<!-- リタイア待機オーバーレイ（他プレイヤー継続中の表示） -->
+<div id="retire-wait-overlay">
+  <div class="retire-big-text">リタイア</div>
+  <div id="retire-wait-detail" class="retire-sub-text">他のプレイヤーがプレイ中です...<br>全員の終了まで待機しています</div>
 </div>
 
 <!-- 勝利条件ダイアログ -->
@@ -831,16 +883,16 @@ canvas#game-canvas {
         <option value="1000">1000点</option>
       </select>
     </div>
-    <div id="guest-target-display" style="display:none; flex-direction: column; align-items:center;">
+    <div id="guest-target-display" style="display: none; flex-direction: column; align-items:center;">
       <p class="note-text">ホストが設定した勝利条件</p>
       <div id="guest-target-value" style="font-size: 26px; font-weight:bold; color:#ffd700; margin:8px 0;">300点</div>
     </div>
-    <button id="btn-dialog-ok" onclick="confirmTargetScoreOk()" style="width: 100%; background: #007700; border-color:#00ff00; font-weight: bold;">OK</button>
+    <button id="btn-dialog-ok" onclick="confirmTargetScoreOk()" style="width: 100%; background: #007700; border-color: #00ff00; font-weight: bold;">OK</button>
     <p id="dialog-ok-status" class="note-text" style="color:#ffd700; margin-top:8px;"></p>
   </div>
 </div>
 
-<!-- ゲーム開始時 「GO!」中央表示 -->
+<!-- ゲーム開始時 「GO!」 中央表示 -->
 <div id="go-overlay">
   <div class="go-text">GO!</div>
 </div>
@@ -857,23 +909,17 @@ canvas#game-canvas {
   </div>
   <div id="win-actions">
     <button onclick="playSe('decide'); rematchGame()" style="background:#007700; border-color:#00ff00; font-weight: bold;">再戦する</button>
-    <button onclick="playSe('gameOver'); finishFromWin()" style="background:#441111; border-color:#ff5555;">終了する</button>
+    <button onclick="playSe('gameOver'); finishFromWin()" style="background: #441111; border-color:#ff5555;">終了する</button>
   </div>
 </div>
 
 <script>
 // ===
-// BGM (MP3 または WAV形式) & 効果音(8種類)設定
+// BGM & 効果音設定
 // ===
 const BGM_TRACKS = [
-  "./bgm1.mp3",
-  "./bgm2.mp3",
-  "./bgm3.mp3",
-  "./bgm4.mp3",
-  "./bgm5.mp3",
-  "./bgm6.mp3",
-  "./bgm7.mp3",
-  "./bgm8.mp3"
+  "./bgm1.mp3", "./bgm2.mp3", "./bgm3.mp3", "./bgm4.mp3",
+  "./bgm5.mp3", "./bgm6.mp3", "./bgm7.mp3", "./bgm8.mp3"
 ].slice(0, 8);
 
 const SE_FILES = {
@@ -1042,7 +1088,7 @@ document.addEventListener('pointerdown', () => {
 }, { once: false });
 
 // ===
-// JSONBin 固定設定 (画面からは変更不可) & スコアリセット設定
+// スコアボード管理
 // ===
 const DEFAULT_JSONBIN_ID = "";
 const DEFAULT_JSONBIN_MASTER_KEY = "";
@@ -1067,6 +1113,13 @@ function loadLocalScores() {
 
 function saveLocalScores(list) {
   localStorage.setItem(LOCAL_SCOREBOARD_KEY, JSON.stringify(list.slice(0, 10)));
+}
+
+function normalizeTop10Scores(list) {
+  return [...(list || [])]
+    .filter(item => item && typeof item.score === "number")
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
 }
 
 async function fetchGlobalScores() {
@@ -1115,13 +1168,6 @@ async function saveGlobalScores(list) {
   }
 }
 
-function normalizeTop10Scores(list) {
-  return [...(list || [])]
-    .filter(item => item && typeof item.score === "number")
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
-}
-
 async function resetScoreboardWithPassword() {
   playSe('cursor');
   const inputPass = prompt("スコアリセット用のパスワードを入力してください:");
@@ -1155,7 +1201,7 @@ async function refreshScoreboardView() {
   const listEl = document.getElementById("scoreboard-list");
   const noteEl = document.getElementById("scoreboard-source-note");
   if (!listEl) return;
-  listEl.innerHTML = `<div class="note-text">読み込み中...</div>`;
+  listEl.innerHTML = '<div class="note-text">読み込み中...</div>';
   const { scores, source } = await fetchGlobalScores();
   if (noteEl) noteEl.innerText = `データ元: ${source}`;
   if (!scores.length) {
@@ -1190,6 +1236,7 @@ async function evaluateRankInAndShowEntry(finalScore) {
   const status = document.getElementById("rankin-submit-status");
   const btn = document.getElementById("btn-submit-scoreboard");
   if (!box || !input) return;
+
   const { scores } = await fetchGlobalScores();
   const qualifiesTop10 = finalScore > 0 && (scores.length < 10 || finalScore > scores[scores.length - 1].score);
   if (qualifiesTop10) {
@@ -1225,7 +1272,7 @@ async function submitScoreToGlobalBoard() {
   if (status) status.innerText = `登録完了! (${saveRes.source})`;
 }
 
-// --- ズーム防止(ピンチ・ダブルタップ連打)
+// --- ズーム防止 ---
 let lastTouchEndTime = 0;
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
@@ -1244,6 +1291,9 @@ document.addEventListener('touchend', (e) => {
   lastTouchEndTime = now;
 }, { passive: false });
 
+// ===
+// 通信・ゲーム進行ステート管理
+// ===
 let playType = "multi";
 let myName = "";
 let myId = "";
@@ -1253,6 +1303,7 @@ let myBuiltBlocks = [];
 let sharedBlocks = [];
 let currentBuilderSize = 3;
 let builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
+
 let peer = null;
 let isHost = false;
 let roomKey = "";
@@ -1260,6 +1311,8 @@ let maxPlayers = 1;
 let playerIndex = 0;
 let connections = [];
 let guestConnection = null;
+let roomPlayers = {}; // { peerId: { name, isHost } }
+
 let completedPlayers = new Set();
 let okPlayers = new Set();
 let finishedPlayersMap = {};
@@ -1267,6 +1320,7 @@ let rematchReadyPlayers = new Set();
 let myDoneSent = false;
 let myOkSent = false;
 let myFinishedSent = false;
+
 let winTargetScore = 300;
 let gameFinished = false;
 let waitingForOthersOver = false;
@@ -1274,6 +1328,31 @@ let fireworksAnimId = null;
 let resultFireworksAnimId = null;
 let announceTimers = [];
 let winActionTimer = null;
+
+function getActorId() {
+  if (!myId) {
+    myId = (isHost ? 'host_' : 'guest_') + Math.random().toString(36).slice(2, 9);
+  }
+  return myId;
+}
+
+function showRetireWaitOverlay(show, remainingCount = null) {
+  const ov = document.getElementById('retire-wait-overlay');
+  const detail = document.getElementById('retire-wait-detail');
+  if (!ov) return;
+  if (show) {
+    if (detail) {
+      if (typeof remainingCount === 'number' && remainingCount > 0) {
+        detail.innerHTML = `他のプレイヤー（残り${remainingCount}人）がプレイ中です...<br>全員の終了まで待機しています`;
+      } else {
+        detail.innerHTML = `他のプレイヤーがプレイ中です...<br>全員の終了まで待機しています`;
+      }
+    }
+    ov.classList.add('active');
+  } else {
+    ov.classList.remove('active');
+  }
+}
 
 function setButtonLit(btnId, lit) {
   const btn = document.getElementById(btnId);
@@ -1311,9 +1390,12 @@ function syncGameModeOptionsForPlayers() {
 }
 
 function showScreen(screenId) {
-  if (screenId !== 'screen-game' && gameInterval) {
-    clearInterval(gameInterval);
-    gameInterval = null;
+  if (screenId !== 'screen-game') {
+    showRetireWaitOverlay(false);
+    if (gameInterval) {
+      clearInterval(gameInterval);
+      gameInterval = null;
+    }
   }
   if (screenId !== 'screen-result') {
     stopResultFireworks();
@@ -1321,11 +1403,13 @@ function showScreen(screenId) {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(screenId).classList.add('active');
+
   if (screenId === 'screen-title' || screenId === 'screen-game') {
     playRandomBgm(true);
   } else if (!audioMuted && (!bgmAudioEl || bgmAudioEl.paused)) {
     playRandomBgm(false);
   }
+
   if (screenId === 'screen-host-count') syncGameModeOptionsForPlayers();
   else if (screenId === 'screen-host-setup') {
     document.getElementById('host-setup-controls').style.display = 'flex';
@@ -1337,7 +1421,7 @@ function showScreen(screenId) {
 
 function submitName() {
   const val = document.getElementById('player-name-input').value.trim();
-  if (!val.match(/^[ぁ-ん一-龠ー]{1,6}$/)) {
+  if (!val.match(/^[ぁ-んー]{1,6}$/)) {
     playSe('cursor');
     alert('ひらがな1〜6文字で入力してください');
     return;
@@ -1350,6 +1434,7 @@ function submitName() {
     playerIndex = 0;
     myId = 'single_' + Date.now();
     connections = [];
+    roomPlayers = { [myId]: { name: myName, isHost: true } };
     completedPlayers = new Set();
     okPlayers = new Set();
     finishedPlayersMap = {};
@@ -1398,14 +1483,17 @@ function confirmHostCountAndCreateRoom() {
   playerIndex = 0;
   roomKey = Math.floor(1000 + Math.random() * 9000).toString();
   connections = [];
+  roomPlayers = {};
   completedPlayers = new Set();
   okPlayers = new Set();
   finishedPlayersMap = {};
   rematchReadyPlayers = new Set();
+
   try {
     peer = new Peer('wing_block_' + roomKey);
     peer.on('open', (id) => {
       myId = id;
+      roomPlayers[myId] = { name: myName, isHost: true };
       updateLobbyView();
       showScreen('screen-lobby');
     });
@@ -1427,7 +1515,22 @@ function confirmHostCountAndCreateRoom() {
       });
       c.on('data', (data) => handlePeerMessage(data, c));
       c.on('close', () => {
+        const disconnectedId = c._playerPeerId;
         connections = connections.filter(conn => conn !== c);
+        if (disconnectedId) {
+          delete roomPlayers[disconnectedId];
+          // ゲーム中にゲストが切断された場合、フリーズ防止のため自動的にリタイア扱いにして進行チェック
+          if (document.getElementById('screen-game').classList.contains('active') && !gameFinished) {
+            if (!finishedPlayersMap[disconnectedId]) {
+              finishedPlayersMap[disconnectedId] = {
+                name: c._playerName || 'ゲスト',
+                score: 0,
+                status: '切断リタイア'
+              };
+            }
+            checkAllPlayersFinishedInRoom();
+          }
+        }
         updateLobbyView();
       });
     });
@@ -1463,6 +1566,7 @@ function joinAsGuest() {
   myOkSent = false;
   myFinishedSent = false;
   finishedPlayersMap = {};
+
   try {
     peer = new Peer();
     peer.on('open', (id) => {
@@ -1483,8 +1587,14 @@ function joinAsGuest() {
         }
         handlePeerMessage(data, guestConnection);
       });
+      guestConnection.on('close', () => {
+        if (!gameFinished && document.getElementById('screen-game').classList.contains('active')) {
+          alert('ホストとの通信が切断されました。');
+          location.reload();
+        }
+      });
+      showScreen('screen-lobby');
     });
-    showScreen('screen-lobby');
     peer.on('error', () => {
       alert('参加番号が見つかりません。');
     });
@@ -1496,7 +1606,9 @@ function joinAsGuest() {
 function onHostLobbyNext() {
   if (!isHost) return;
   playSe('decide');
-  broadcastToPeers({ type: 'go_host_setup' });
+  // 実際に接続している人数にmaxPlayersを確定させてズレを防ぐ
+  maxPlayers = 1 + connections.length;
+  broadcastToPeers({ type: 'go_host_setup', maxPlayers });
   showHostSetupScreen(true);
 }
 
@@ -1510,6 +1622,12 @@ function distributeBlocksAndStartBuild() {
   if (!isHost) return;
   totalBlockCount = parseInt(document.getElementById('total-block-count').value, 10);
   currentMode = document.getElementById('game-mode-select').value;
+  if (playType === 'multi') {
+    maxPlayers = 1 + connections.length;
+  } else {
+    maxPlayers = 1;
+  }
+
   const allocations = allocateBlockCounts(totalBlockCount, maxPlayers);
   myAssignedBlockCount = allocations[0];
   myBuiltBlocks = [];
@@ -1521,6 +1639,7 @@ function distributeBlocksAndStartBuild() {
   myDoneSent = false;
   myOkSent = false;
   myFinishedSent = false;
+
   if (playType === 'multi') {
     connections.forEach((c, idx) => {
       const pIdx = idx + 1;
@@ -1530,7 +1649,8 @@ function distributeBlocksAndStartBuild() {
           type: 'start_build',
           totalBlockCount,
           mode: currentMode,
-          assignedCount: count
+          assignedCount: count,
+          maxPlayers
         });
       }
     });
@@ -1540,6 +1660,7 @@ function distributeBlocksAndStartBuild() {
 
 function initBuilder() {
   currentBuilderSize = 3;
+  document.getElementById('btn-toggle-size').innerText = 'モード切替: 3×3';
   builderGrid = Array(3).fill(0).map(() => Array(6).fill(0));
   updateBuilderLabels();
   renderBuilderGrid();
@@ -1625,7 +1746,7 @@ function submitMyBlocksDone() {
   if (myBuiltBlocks.length < myAssignedBlockCount || myDoneSent) return;
   playSe('decide');
   myDoneSent = true;
-  const actorId = myId || ('local_' + myName);
+  const actorId = getActorId();
   if (isHost) {
     completedPlayers.add(actorId);
     updateReadyScreenForHost();
@@ -1660,7 +1781,7 @@ function openTargetScoreDialogForAll() {
   if (currentMode === 'speed') {
     showTargetScoreDialog(true, winTargetScore);
   } else {
-    okPlayers.add(myId || ('local_' + myName));
+    okPlayers.add(getActorId());
     broadcastToPeers({ type: 'normal_auto_ok' });
     checkAllOkAndLaunchGo();
   }
@@ -1691,7 +1812,7 @@ function confirmTargetScoreOk() {
   myOkSent = true;
   setButtonLit('btn-dialog-ok', false);
   document.getElementById('dialog-ok-status').innerText = '他のプレイヤーのOK待ち...';
-  const actorId = myId || ('local_' + myName);
+  const actorId = getActorId();
   if (isHost) {
     winTargetScore = parseInt(document.getElementById('dialog-win-score').value, 10) || 300;
     okPlayers.add(actorId);
@@ -1715,7 +1836,8 @@ function checkAllOkAndLaunchGo() {
       type: 'launch_go',
       mode: currentMode,
       winTargetScore,
-      sharedBlocks
+      sharedBlocks,
+      maxPlayers
     };
     broadcastToPeers(payload);
     startGameWithGoOverlay(currentMode, winTargetScore, sharedBlocks);
@@ -1740,9 +1862,19 @@ function startGameWithGoOverlay(mode, targetScore, blocksPool) {
 
 function handlePeerMessage(data, senderConn) {
   if (!data || !data.type) return;
-  if (data.type === 'go_host_setup') {
+
+  if (data.type === 'guest_joined') {
+    if (isHost && data.senderId) {
+      senderConn._playerPeerId = data.senderId;
+      senderConn._playerName = data.name || 'ゲスト';
+      roomPlayers[data.senderId] = { name: data.name || 'ゲスト', isHost: false };
+      updateLobbyView();
+    }
+  } else if (data.type === 'go_host_setup') {
+    if (data.maxPlayers) maxPlayers = data.maxPlayers;
     showHostSetupScreen(false);
   } else if (data.type === 'start_build') {
+    if (data.maxPlayers) maxPlayers = data.maxPlayers;
     totalBlockCount = data.totalBlockCount || 6;
     currentMode = data.mode || 'normal';
     myAssignedBlockCount = data.assignedCount ?? 1;
@@ -1771,8 +1903,7 @@ function handlePeerMessage(data, senderConn) {
     showTargetScoreDialog(false, winTargetScore);
   } else if (data.type === 'normal_auto_ok') {
     if (!isHost && guestConnection && guestConnection.open) {
-      const actorId = myId || ('local_' + myName);
-      guestConnection.send({ type: 'player_ok', senderId: actorId });
+      guestConnection.send({ type: 'player_ok', senderId: getActorId() });
     }
   } else if (data.type === 'player_ok') {
     if (isHost) {
@@ -1780,6 +1911,7 @@ function handlePeerMessage(data, senderConn) {
       checkAllOkAndLaunchGo();
     }
   } else if (data.type === 'launch_go') {
+    if (data.maxPlayers) maxPlayers = data.maxPlayers;
     finishedPlayersMap = {};
     rematchReadyPlayers = new Set();
     myFinishedSent = false;
@@ -1792,6 +1924,7 @@ function handlePeerMessage(data, senderConn) {
         status: 'WIN!!'
       };
     }
+    showRetireWaitOverlay(false);
     triggerWinCelebration(data.winnerName, data.score, false);
     if (isHost) {
       connections.forEach(c => {
@@ -1802,32 +1935,54 @@ function handlePeerMessage(data, senderConn) {
     if (data.playerId) {
       finishedPlayersMap[data.playerId] = {
         name: data.name || 'プレイヤー',
-        score: data.score ?? 0,
+        score: Number(data.score ?? 0),
         status: data.status || 'リタイア'
       };
     }
     if (isHost) {
-      connections.forEach(c => {
-        if (c !== senderConn && c.open) c.send(data);
+      // ホストは最新の全員状況と残り人数を全員へブロードキャストし、全員完了したか判定する
+      const finishedCount = Object.keys(finishedPlayersMap).length;
+      const remaining = Math.max(0, maxPlayers - finishedCount);
+      broadcastToPeers({
+        type: 'sync_finished_status',
+        rankingsMap: finishedPlayersMap,
+        remainingCount: remaining
       });
+      if (waitingForOthersOver) {
+        showRetireWaitOverlay(true, remaining);
+      }
       checkAllPlayersFinishedInRoom();
+    }
+  } else if (data.type === 'sync_finished_status') {
+    if (data.rankingsMap) {
+      finishedPlayersMap = data.rankingsMap;
+    }
+    if (waitingForOthersOver && !gameFinished) {
+      showRetireWaitOverlay(true, data.remainingCount);
     }
   } else if (data.type === 'all_finished_rankings') {
     finishedPlayersMap = data.rankingsMap || finishedPlayersMap;
     waitingForOthersOver = false;
+    gameFinished = true;
+    showRetireWaitOverlay(false);
+    if (gameInterval) {
+      clearInterval(gameInterval);
+      gameInterval = null;
+    }
     showFinalResultScreen(finishedPlayersMap);
   } else if (data.type === 'host_rematch_selected') {
     if (!isHost) {
       hideWinCelebration();
+      showRetireWaitOverlay(false);
       if (!document.getElementById('screen-result').classList.contains('active')) {
-        const actorId = myId || ('local_' + myName);
+        const actorId = getActorId();
         if (!finishedPlayersMap[actorId]) {
           finishedPlayersMap[actorId] = { name: myName || 'プレイヤー', score, status: '終了' };
         }
         showFinalResultScreen(finishedPlayersMap);
       }
       document.getElementById('guest-result-actions').style.display = 'flex';
-      document.getElementById('guest-result-wait-msg').innerText = 'ホストが再戦を選びました! レディーを押してください';
+      document.getElementById('guest-result-wait-msg').innerText = 'ホストが再戦を選びました! READYを押してください';
       const readyBtn = document.getElementById('btn-guest-rematch-ready');
       readyBtn.style.display = 'block';
       setButtonLit('btn-guest-rematch-ready', true);
@@ -1839,6 +1994,7 @@ function handlePeerMessage(data, senderConn) {
     }
   } else if (data.type === 'start_rematch_builder') {
     hideWinCelebration();
+    showRetireWaitOverlay(false);
     totalBlockCount = data.totalBlockCount || totalBlockCount;
     currentMode = data.mode || currentMode;
     myAssignedBlockCount = data.assignedCount ?? 1;
@@ -1852,6 +2008,7 @@ function handlePeerMessage(data, senderConn) {
     showScreen('screen-builder');
   } else if (data.type === 'host_end_selected') {
     hideWinCelebration();
+    showRetireWaitOverlay(false);
     alert('ホストが終了を選択しました。');
     location.reload();
   }
@@ -1859,14 +2016,21 @@ function handlePeerMessage(data, senderConn) {
 
 function checkAllPlayersFinishedInRoom() {
   if (!isHost) return;
+  const totalExpected = (playType === 'multi') ? (1 + connections.length) : 1;
   const finishedCount = Object.keys(finishedPlayersMap).length;
-  if (finishedCount >= maxPlayers) {
+  if (finishedCount >= totalExpected) {
+    gameFinished = true;
+    waitingForOthersOver = false;
+    showRetireWaitOverlay(false);
+    if (gameInterval) {
+      clearInterval(gameInterval);
+      gameInterval = null;
+    }
     const payload = {
       type: 'all_finished_rankings',
       rankingsMap: finishedPlayersMap
     };
     broadcastToPeers(payload);
-    waitingForOthersOver = false;
     showFinalResultScreen(finishedPlayersMap);
   }
 }
@@ -1892,6 +2056,7 @@ function startResultFireworks() {
   const fwCtx = fwCanvas.getContext('2d');
   fwCanvas.width = fwCanvas.parentElement?.clientWidth || window.innerWidth;
   fwCanvas.height = fwCanvas.parentElement?.clientHeight || window.innerHeight;
+
   const particles = [];
   const colors = ['#ff00ff', '#00ffff', '#ffd700', '#00ff88', '#ff5555', '#ffffff'];
 
@@ -1899,9 +2064,9 @@ function startResultFireworks() {
     const cx = Math.random() * fwCanvas.width * 0.8 + fwCanvas.width * 0.1;
     const cy = Math.random() * fwCanvas.height * 0.45 + fwCanvas.height * 0.1;
     const color = colors[Math.floor(Math.random() * colors.length)];
-    for (let i = 0; i < 32; i++) {
-      const angle = (Math.PI * 2 * i) / 32;
-      const speed = 1.6 + Math.random() * 3.5;
+    for (let i = 0; i < 36; i++) {
+      const angle = (Math.PI * 2 * i) / 36;
+      const speed = 1.6 + Math.random() * 3.8;
       particles.push({
         x: cx,
         y: cy,
@@ -1914,6 +2079,7 @@ function startResultFireworks() {
   }
 
   spawnBurst();
+  spawnBurst();
   let tick = 0;
   if (resultFireworksAnimId) cancelAnimationFrame(resultFireworksAnimId);
 
@@ -1921,13 +2087,13 @@ function startResultFireworks() {
     fwCtx.fillStyle = 'rgba(15, 15, 25, 0.22)';
     fwCtx.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
     tick++;
-    if (tick % 30 === 0) spawnBurst();
+    if (tick % 26 === 0) spawnBurst();
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.x += p.vx;
       p.y += p.vy;
       p.vy += 0.045;
-      p.alpha -= 0.016;
+      p.alpha -= 0.01;
       if (p.alpha <= 0) {
         particles.splice(i, 1);
         continue;
@@ -1937,8 +2103,8 @@ function startResultFireworks() {
       fwCtx.beginPath();
       fwCtx.arc(p.x, p.y, 2.8, 0, Math.PI * 2);
       fwCtx.fill();
-      fwCtx.globalAlpha = 1;
     }
+    fwCtx.globalAlpha = 1;
     resultFireworksAnimId = requestAnimationFrame(loop);
   }
   loop();
@@ -1954,9 +2120,10 @@ function getHostResultActionsHtml() {
 function showFinalResultScreen(mapObj) {
   clearAnnounceTimers();
   stopResultFireworks();
+  showRetireWaitOverlay(false);
   showScreen('screen-result');
-  document.getElementById('result-title').innerText = currentMode === 'challenge' ? 'スコアチャレンジ 得点発表' : '結果発表';
 
+  document.getElementById('result-title').innerText = currentMode === 'challenge' ? 'スコアチャレンジ 得点発表' : '結果発表';
   const announceEl = document.getElementById('sequential-announcement');
   const listEl = document.getElementById('result-list');
   announceEl.innerHTML = '';
@@ -1970,38 +2137,39 @@ function showFinalResultScreen(mapObj) {
   document.getElementById('btn-guest-rematch-ready').style.display = 'none';
   document.getElementById('guest-result-wait-msg').innerText = 'ホストが再戦か終了を選択中です...';
 
-  const entries = Object.values(mapObj || {}).sort((a, b) => b.score - a.score);
+  // 得点が高い順にソートして順位を付与（ノーマルモードも最大得点が1位）
+  const entries = Object.values(mapObj || {}).sort((a, b) => Number(b.score) - Number(a.score));
   if (entries.length === 0) {
     entries.push({ name: myName || 'プレイヤー', score, status: '終了' });
   }
 
   let currentRank = 1;
   const ranked = entries.map((item, idx) => {
-    if (idx > 0 && item.score < entries[idx - 1].score) {
+    if (idx > 0 && Number(item.score) < Number(entries[idx - 1].score)) {
       currentRank = idx + 1;
     }
     return { ...item, rank: currentRank };
   });
 
   const myEntry = entries.find(e => e.name === (myName || 'プレイヤー')) || entries[0];
-  evaluateRankInAndShowEntry(myEntry ? myEntry.score : score);
+  evaluateRankInAndShowEntry(myEntry ? Number(myEntry.score) : score);
 
-  // 最下位から順番に発表（配列の逆順）
+  // 得点下位から順番に発表（配列の逆順）
   const orderToAnnounce = [...ranked].reverse();
-  const stepMs = 1300;
+  const stepMs = 1400;
 
   orderToAnnounce.forEach((item, i) => {
     const isLastWinner = (i === orderToAnnounce.length - 1);
     const tId = setTimeout(() => {
       if (isLastWinner && currentMode !== 'challenge') {
-        // 最後のプレイヤー(1位)発表時: WIN!!表示 + 花火パーティクル + 勝利音
+        // 最後に最大得点者（1位）が表示されたら花火パーティクル + WIN表示
         playSe('win');
         startResultFireworks();
         announceEl.innerHTML = `
           <div style="font-size: 20px; color: #00ffff; margin-bottom: 4px;">
             ${item.rank}位: ${escapeHtml(item.name)} (${item.score}点)
           </div>
-          <div style="font-size: 36px; color: #ffd700; text-shadow: 0 0 16px #ff00ff, 0 0 28px #ffd700; letter-spacing: 3px;">
+          <div style="font-size: 42px; color: #ffd700; font-weight: bold; text-shadow: 0 0 18px #ff00ff, 0 0 32px #ffd700; letter-spacing: 4px;">
             WIN!!
           </div>
         `;
@@ -2011,7 +2179,7 @@ function showFinalResultScreen(mapObj) {
           <div style="font-size: 20px; color: #fff;">
             ${item.rank}位: <span style="color:#00ffff;">${escapeHtml(item.name)}</span>
           </div>
-          <div style="font-size: 24px; color: #ffd700;">
+          <div style="font-size: 26px; color: #ffd700;">
             ${item.score}点
           </div>
         `;
@@ -2020,7 +2188,7 @@ function showFinalResultScreen(mapObj) {
     announceTimers.push(tId);
   });
 
-  // 全員の順番発表完了後にランキング一覧とホスト限定ボタンを表示
+  // 全員の順番発表完了後にランキング一覧とホストの「再戦」「終了」ボタンを表示
   const summaryTimer = setTimeout(() => {
     listEl.innerHTML = ranked.map((item) => {
       const isFirst = item.rank === 1;
@@ -2043,13 +2211,14 @@ function showFinalResultScreen(mapObj) {
 function hostChooseRematch() {
   if (!isHost) return;
   rematchReadyPlayers = new Set();
-  rematchReadyPlayers.add(myId || ('local_' + myName));
+  rematchReadyPlayers.add(getActorId());
   broadcastToPeers({ type: 'host_rematch_selected' });
-  if (maxPlayers === 1) {
+  const totalExpected = (playType === 'multi') ? (1 + connections.length) : 1;
+  if (totalExpected <= 1) {
     checkAllRematchReadyAndStartBuild();
   } else {
     document.getElementById('host-result-actions').innerHTML =
-      `<p class="note-text" style="color:#00ff88; font-size: 13px;">他プレイヤーの「レディー」待ち...</p>`;
+      `<p class="note-text" style="color:#00ff88; font-size: 13px;">他プレイヤーの「READY」待ち...</p>`;
   }
 }
 
@@ -2064,8 +2233,8 @@ function guestTapRematchReady() {
   if (!btn || btn.disabled) return;
   playSe('decide');
   setButtonLit('btn-guest-rematch-ready', false);
-  document.getElementById('guest-result-wait-msg').innerText = 'レディー送信済み! 全員の準備待ち...';
-  const actorId = myId || ('local_' + myName);
+  document.getElementById('guest-result-wait-msg').innerText = 'READY送信済み! 全員の準備待ち...';
+  const actorId = getActorId();
   if (guestConnection && guestConnection.open) {
     guestConnection.send({ type: 'guest_rematch_ready', playerId: actorId });
   }
@@ -2073,7 +2242,9 @@ function guestTapRematchReady() {
 
 function checkAllRematchReadyAndStartBuild() {
   if (!isHost) return;
-  if (rematchReadyPlayers.size >= maxPlayers) {
+  const totalExpected = (playType === 'multi') ? (1 + connections.length) : 1;
+  if (rematchReadyPlayers.size >= totalExpected) {
+    maxPlayers = totalExpected;
     const allocations = allocateBlockCounts(totalBlockCount, maxPlayers);
     myAssignedBlockCount = allocations[0];
     myBuiltBlocks = [];
@@ -2083,6 +2254,7 @@ function checkAllRematchReadyAndStartBuild() {
     myDoneSent = false;
     myOkSent = false;
     myFinishedSent = false;
+
     if (playType === 'multi') {
       connections.forEach((c, idx) => {
         const count = allocations[idx + 1] ?? 1;
@@ -2130,7 +2302,9 @@ function isPlacementMode(mode) {
   return mode === 'speed' || mode === 'challenge';
 }
 
-// --- メインゲーム関連 ---
+// ===
+// メインゲーム関連
+// ===
 let canvas, ctx;
 let nextCanvas, nextCtx;
 let boardWidth = 10, boardHeight = 20, blockSize = 22;
@@ -2153,7 +2327,9 @@ function initGame() {
   gameFinished = false;
   waitingForOthersOver = false;
   myFinishedSent = false;
+  showRetireWaitOverlay(false);
   hideWinCelebration();
+
   document.getElementById('hud-name').innerText = myName || 'プレイヤー';
   document.getElementById('top-status-banner').innerText = '';
   canvas = document.getElementById('game-canvas');
@@ -2176,6 +2352,7 @@ function initGame() {
     const maxByHeight = Math.floor(usableHeight / boardHeight);
     const maxByWidth = Math.floor(usableWidth / boardWidth);
     blockSize = Math.max(16, Math.min(34, maxByHeight, maxByWidth));
+
     currentIntervalMs = calcNormalIntervalMs(0);
     document.getElementById('hud-target').innerText = '全員終了まで';
     document.getElementById('hud-info').innerText = 'ノーマル (50点毎UP)';
@@ -2191,6 +2368,7 @@ function initGame() {
     const maxByHeight = Math.floor(usableHeight / boardHeight);
     const maxByWidth = Math.floor(usableWidth / boardWidth);
     blockSize = Math.max(22, Math.min(44, maxByHeight, maxByWidth));
+
     if (currentMode === 'challenge') {
       document.getElementById('hud-target').innerText = '限界に挑戦';
       document.getElementById('hud-info').innerText = 'スコアチャレンジ';
@@ -2279,7 +2457,8 @@ function updateNormalGame() {
     clearHorizontalLinesNormal();
     spawnNormalPiece();
     if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-      handleMyNormalGameOver();
+      drawGame();
+      handleMyNormalGameOver(false);
       return;
     }
   }
@@ -2291,13 +2470,11 @@ function onMoveBtnTouch(e, dir) {
   e.stopPropagation();
   movePiece(dir);
 }
-
 function onRotateBtnTouch(e) {
   e.preventDefault();
   e.stopPropagation();
   rotatePiece();
 }
-
 function onDropBtnTouch(e) {
   e.preventDefault();
   e.stopPropagation();
@@ -2324,7 +2501,8 @@ function hardDrop() {
   clearHorizontalLinesNormal();
   spawnNormalPiece();
   if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.matrix)) {
-    handleMyNormalGameOver();
+    drawGame();
+    handleMyNormalGameOver(false);
     return;
   }
   drawGame();
@@ -2340,7 +2518,7 @@ function rotatePiece() {
   }
 }
 
-function handleMyNormalGameOver() {
+function handleMyNormalGameOver(isSurrender = false) {
   if (myFinishedSent) return;
   playSe('gameOver');
   myFinishedSent = true;
@@ -2351,32 +2529,51 @@ function handleMyNormalGameOver() {
     gameInterval = null;
   }
 
-  const actorId = myId || ('local_' + myName);
+  const actorId = getActorId();
+  const statusLabel = isSurrender ? 'リタイア (降参)' : 'リタイア';
   const record = {
     name: myName || 'プレイヤー',
-    score,
-    status: 'リタイア'
+    score: Number(score),
+    status: statusLabel
   };
   finishedPlayersMap[actorId] = record;
 
   document.getElementById('hud-info').innerText = 'リタイア';
-  document.getElementById('top-status-banner').innerText = 'リタイア：他プレイヤーゲーム完了待ちです。';
+  document.getElementById('top-status-banner').innerText = 'リタイア: 他のプレイヤーの終了待ち...';
 
-  const payload = {
-    type: 'player_game_over',
-    playerId: actorId,
-    ...record
-  };
-
-  if (playType === 'single' || maxPlayers === 1) {
+  if (playType === 'single' || maxPlayers <= 1) {
     waitingForOthersOver = false;
+    gameFinished = true;
     showFinalResultScreen(finishedPlayersMap);
-  } else if (isHost) {
+    return;
+  }
+
+  // 他のプレイヤーが継続中なら画面中央に大きく「リタイア」を表示して待機
+  const totalExpected = isHost ? (1 + connections.length) : maxPlayers;
+  const remaining = Math.max(0, totalExpected - Object.keys(finishedPlayersMap).length);
+  if (remaining > 0) {
+    showRetireWaitOverlay(true, remaining);
+  }
+
+  if (isHost) {
+    broadcastToPeers({
+      type: 'sync_finished_status',
+      rankingsMap: finishedPlayersMap,
+      remainingCount: remaining
+    });
     checkAllPlayersFinishedInRoom();
   } else if (guestConnection && guestConnection.open) {
-    guestConnection.send(payload);
+    guestConnection.send({
+      type: 'player_game_over',
+      playerId: actorId,
+      name: record.name,
+      score: record.score,
+      status: record.status
+    });
   } else {
     waitingForOthersOver = false;
+    gameFinished = true;
+    showRetireWaitOverlay(false);
     showFinalResultScreen(finishedPlayersMap);
   }
 }
@@ -2438,6 +2635,7 @@ function startDraggingFromDock(idx, clientX, clientY) {
   draggingDockIndex = idx;
   dragMatrix = item.matrix.map(r => [...r]);
   renderDockSlots();
+
   const ghost = document.getElementById('drag-ghost');
   const gCtx = ghost.getContext('2d');
   const rows = dragMatrix.length;
@@ -2488,6 +2686,7 @@ function finishDraggingToBoard(clientX, clientY) {
   const ghost = document.getElementById('drag-ghost');
   ghost.style.display = 'none';
   if (draggingDockIndex < 0 || !dragMatrix) return;
+
   const pos = clientToBoardCell(clientX, clientY, dragMatrix);
   if (pos && !checkCollision(pos.x, pos.y, dragMatrix)) {
     playSe('decide');
@@ -2506,6 +2705,7 @@ function finishDraggingToBoard(clientX, clientY) {
     evaluatePlacementAvailabilityOrEnd();
     return;
   }
+
   draggingDockIndex = -1;
   dragMatrix = null;
   renderDockSlots();
@@ -2537,7 +2737,7 @@ function evaluatePlacementAvailabilityOrEnd() {
 function handleSurrenderTap() {
   if (gameFinished || waitingForOthersOver) return;
   if (currentMode === 'normal') {
-    handleMyNormalGameOver();
+    handleMyNormalGameOver(true);
   } else {
     handleNoPlaceableBlockEnd(true);
   }
@@ -2550,44 +2750,64 @@ function handleNoPlaceableBlockEnd(isSurrender) {
   document.getElementById('drag-ghost').style.display = 'none';
   draggingDockIndex = -1;
   dragMatrix = null;
-  const actorId = myId || ('local_' + myName);
+
+  const actorId = getActorId();
   if (currentMode === 'challenge') {
     gameFinished = true;
     finishedPlayersMap[actorId] = {
       name: myName || 'プレイヤー',
-      score,
+      score: Number(score),
       status: isSurrender ? '降参終了' : 'スコアチャレンジ終了'
     };
     showFinalResultScreen(finishedPlayersMap);
     return;
   }
+
   waitingForOthersOver = true;
-  const statusLabel = isSurrender ? 'リタイア(降参)' : 'リタイア';
+  const statusLabel = isSurrender ? 'リタイア (降参)' : 'リタイア';
   document.getElementById('hud-info').innerText = 'リタイア';
-  document.getElementById('top-status-banner').innerText = 'リタイア：他プレイヤーゲーム完了待ちです。';
+  document.getElementById('top-status-banner').innerText = 'リタイア: 他のプレイヤーの終了待ち...';
+
   const record = {
     name: myName || 'プレイヤー',
-    score,
+    score: Number(score),
     status: statusLabel
   };
   finishedPlayersMap[actorId] = record;
-  const payload = {
-    type: 'player_retired',
-    playerId: actorId,
-    ...record
-  };
-  if (playType === 'single' || maxPlayers === 1) {
+
+  if (playType === 'single' || maxPlayers <= 1) {
     gameFinished = true;
     waitingForOthersOver = false;
     showFinalResultScreen(finishedPlayersMap);
-  } else if (isHost) {
+    return;
+  }
+
+  const totalExpected = isHost ? (1 + connections.length) : maxPlayers;
+  const remaining = Math.max(0, totalExpected - Object.keys(finishedPlayersMap).length);
+  if (remaining > 0) {
+    showRetireWaitOverlay(true, remaining);
+  }
+
+  if (isHost) {
+    broadcastToPeers({
+      type: 'sync_finished_status',
+      rankingsMap: finishedPlayersMap,
+      remainingCount: remaining
+    });
     checkAllPlayersFinishedInRoom();
   } else if (guestConnection && guestConnection.open) {
-    guestConnection.send(payload);
+    guestConnection.send({
+      type: 'player_retired',
+      playerId: actorId,
+      name: record.name,
+      score: record.score,
+      status: record.status
+    });
   } else {
     waitingForOthersOver = false;
-    showFinalResultScreen(finishedPlayersMap);
     gameFinished = true;
+    showRetireWaitOverlay(false);
+    showFinalResultScreen(finishedPlayersMap);
   }
 }
 
@@ -2638,7 +2858,7 @@ function clearHorizontalLinesNormal() {
       playSe('speedUp');
       resetGameInterval(nextMs);
       const tier = Math.floor(score / 50);
-      document.getElementById('top-status-banner').innerText = `${tier * 50}点到達!落下速度UP`;
+      document.getElementById('top-status-banner').innerText = `${tier * 50}点到達! 落下速度UP`;
     }
   }
 }
@@ -2661,6 +2881,7 @@ function clearRowsAndColsPlacement() {
   }
   const clearedCount = fullRows.length + fullCols.length;
   if (clearedCount === 0) return;
+
   playSe('blockClear');
   for (const r of fullRows) {
     for (let c = 0; c < boardWidth; c++) board[r][c] = 0;
@@ -2670,9 +2891,10 @@ function clearRowsAndColsPlacement() {
   }
   score += clearedCount * 10;
   document.getElementById('hud-score').innerText = `${score}点`;
+
   if (currentMode === 'speed' && score >= winTargetScore) {
     const winnerName = myName || 'プレイヤー';
-    const winnerId = myId || ('local_' + myName);
+    const winnerId = getActorId();
     broadcastToPeers({ type: 'first_win', winnerId, winnerName, score });
     triggerWinCelebration(winnerName, score, true);
   }
@@ -2683,6 +2905,8 @@ function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
   playSe('win');
   gameFinished = true;
   waitingForOthersOver = false;
+  showRetireWaitOverlay(false);
+
   if (gameInterval) {
     clearInterval(gameInterval);
     gameInterval = null;
@@ -2690,7 +2914,8 @@ function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
   document.getElementById('drag-ghost').style.display = 'none';
   draggingDockIndex = -1;
   dragMatrix = null;
-  const actorId = myId || ('local_' + myName);
+
+  const actorId = getActorId();
   if (isLocalWinner) {
     finishedPlayersMap[actorId] = {
       name: myName || 'プレイヤー',
@@ -2698,12 +2923,14 @@ function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
       status: 'WIN!!'
     };
   }
+
   const overlay = document.getElementById('win-overlay');
   const actions = document.getElementById('win-actions');
   document.getElementById('win-player-name').innerText = `${winnerName} (${winnerScore}点)`;
   actions.classList.remove('show');
   overlay.classList.add('active');
   startFireworks();
+
   if (winActionTimer) clearTimeout(winActionTimer);
   winActionTimer = setTimeout(() => {
     actions.classList.add('show');
@@ -2752,7 +2979,6 @@ function startFireworks() {
   spawnBurst();
   spawnBurst();
   let tick = 0;
-
   function loop() {
     fwCtx.fillStyle = 'rgba(10, 10, 20, 0.22)';
     fwCtx.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
@@ -2773,8 +2999,8 @@ function startFireworks() {
       fwCtx.beginPath();
       fwCtx.arc(p.x, p.y, 3, 0, Math.PI * 2);
       fwCtx.fill();
-      fwCtx.globalAlpha = 1;
     }
+    fwCtx.globalAlpha = 1;
     fireworksAnimId = requestAnimationFrame(loop);
   }
   loop();
@@ -2782,11 +3008,11 @@ function startFireworks() {
 
 function rematchGame() {
   hideWinCelebration();
-  const actorId = myId || ('local_' + myName);
+  const actorId = getActorId();
   if (!finishedPlayersMap[actorId]) {
     finishedPlayersMap[actorId] = {
       name: myName || 'プレイヤー',
-      score,
+      score: Number(score),
       status: '終了'
     };
   }
@@ -2806,6 +3032,7 @@ function drawGame(ghostPos = null) {
   if (!ctx) return;
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   ctx.strokeStyle = '#181818';
   ctx.lineWidth = 1;
   for (let r = 0; r <= boardHeight; r++) {
@@ -2820,6 +3047,7 @@ function drawGame(ghostPos = null) {
     ctx.lineTo(c * blockSize, canvas.height);
     ctx.stroke();
   }
+
   for (let r = 0; r < boardHeight; r++) {
     for (let c = 0; c < boardWidth; c++) {
       if (board[r][c] !== 0) {
@@ -2828,6 +3056,7 @@ function drawGame(ghostPos = null) {
       }
     }
   }
+
   if (currentMode === 'normal' && currentPiece) {
     ctx.fillStyle = '#ff00ff';
     for (let r = 0; r < currentPiece.matrix.length; r++) {
@@ -2840,6 +3069,7 @@ function drawGame(ghostPos = null) {
       }
     }
   }
+
   if (isPlacementMode(currentMode) && dragMatrix && ghostPos) {
     const valid = !checkCollision(ghostPos.x, ghostPos.y, dragMatrix);
     ctx.fillStyle = valid ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 60, 60, 0.5)';
