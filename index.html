@@ -654,7 +654,7 @@ canvas#game-canvas {
       <button onclick="playSe('decide'); distributeBlocksAndStartBuild()" style="background:#006644; border-color: #00ff88; font-weight: bold;">ブロック作成へ進む</button>
     </div>
     <div id="please-wait-box" style="display: none; flex-direction:column; align-items:center; text-align:center;">
-      <h1 style="color:#ffd700; font-size: 24px;">プリーズウェイト</h1>
+      <h1 style="color:#ffd700; font-size: 24px;">please wait</h1>
       <p class="note-text" style="font-size:13px; color: #ccc;">ホストがブロックの種類数とゲームモードを選択中です...</p>
     </div>
   </div>
@@ -673,7 +673,7 @@ canvas#game-canvas {
   <div id="screen-ready" class="screen">
     <h1 id="ready-title">ブロック作成確認</h1>
     <p id="ready-status-text" style="font-size: 14px; color:#ccc; text-align:center; margin: 10px 0;"></p>
-    <button id="btn-ready-trigger" class="dim-btn" onclick="openTargetScoreDialogForAll()" disabled>レディー</button>
+    <button id="btn-ready-trigger" class="dim-btn" onclick="openTargetScoreDialogForAll()" disabled>READY</button>
   </div>
 
   <!-- ⑨ ゲームプレイ画面 -->
@@ -747,7 +747,7 @@ canvas#game-canvas {
       </div>
       <div id="guest-result-actions" style="display: none; width:100%; flex-direction: column; align-items:center;">
         <p id="guest-result-wait-msg" class="note-text" style="color:#ffd700; font-size: 13px;">ホストが再戦か終了を選択中です...</p>
-        <button id="btn-guest-rematch-ready" class="lit-btn" style="display:none;" onclick="guestTapRematchReady()">レディー</button>
+        <button id="btn-guest-rematch-ready" class="lit-btn" style="display:none;" onclick="guestTapRematchReady()">READY</button>
       </div>
     </div>
   </div>
