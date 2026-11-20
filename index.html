@@ -301,7 +301,7 @@ canvas#game-canvas {
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* スピードモード / スコアチャレンジ用: 下部ブロック待機所 (4枠) */
+/* スコアチャレンジ用: 下部ブロック待機所 (4枠) */
 #dock-area {
   display: none;
   width: 100%;
@@ -489,7 +489,7 @@ canvas#game-canvas {
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* スピードモード WIN 花火演出オーバーレイ */
+/* WIN 花火演出オーバーレイ */
 #win-overlay {
   position: fixed;
   inset: 0;
@@ -670,7 +670,7 @@ canvas#game-canvas {
   <!-- ① タイトル画面 -->
   <div id="screen-title" class="screen active">
     <h1>■ ブロック崩し ■</h1>
-    <div class="version">Ver 3.2 (-WING-)</div>
+    <div class="version">Ver 3.3 (-WING-)</div>
     <button onclick="playSe('decide'); showScreen('screen-play-type')" style="background: #330033; border-color:#ff00ff; color: #ff00ff;">- スタート -</button>
     <button onclick="playSe('decide'); openScoreboardScreen('screen-title')" style="background: #152836; border-color:#00ffff; color: #00ffff;">☆ 共通スコアボード(上位10) ☆</button>
   </div>
@@ -733,24 +733,28 @@ canvas#game-canvas {
   <!-- ⑥ ブロック種類数&ゲームモード選択 -->
   <div id="screen-host-setup" class="screen">
     <div id="host-setup-controls" style="width:100%; display: flex; flex-direction:column; align-items:center;">
-      <h1>ブロック種類数&amp;モード</h1>
-      <label class="note-text">ブロックの種類数</label>
-      <select id="total-block-count" onchange="playSe('cursor')">
-        <option value="2">2種類</option>
-        <option value="3">3種類</option>
-        <option value="4">4種類</option>
-        <option value="5">5種類</option>
-        <option value="6" selected>6種類</option>
-        <option value="8">8種類</option>
-        <option value="10">10種類</option>
-      </select>
+      <h1 id="setup-heading">ブロック種類数&amp;モード</h1>
+      <div id="block-count-picker-wrap" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+        <label class="note-text">ブロックの種類数</label>
+        <select id="total-block-count" onchange="playSe('cursor')">
+          <option value="2">2種類</option>
+          <option value="3">3種類</option>
+          <option value="4">4種類</option>
+          <option value="5">5種類</option>
+          <option value="6" selected>6種類</option>
+          <option value="8">8種類</option>
+          <option value="10">10種類</option>
+        </select>
+      </div>
+      <p id="single-preset-note" class="note-text" style="display:none; color:#00ff88;">
+        シングルプレイ専用ブロック使用（ノーマル: 1〜6 / スコアチャレンジ: 1〜8）
+      </p>
       <label class="note-text">ゲームモード</label>
-      <select id="game-mode-select" onchange="playSe('cursor')">
+      <select id="game-mode-select" onchange="playSe('cursor'); onModeSelectChange()">
         <option value="normal">ノーマルモード (50点ごとに落下速度UP)</option>
-        <option value="speed">スピードモード(縦横揃えて消去・設定点先取)</option>
         <option id="opt-score-challenge" value="challenge" style="display: none;">スコアチャレンジ (1人用・配置不可まで高得点)</option>
       </select>
-      <button onclick="playSe('decide'); distributeBlocksAndStartBuild()" style="background: #006644; border-color: #00ff88; font-weight: bold;">ブロック作成へ進む</button>
+      <button id="btn-setup-proceed" onclick="playSe('decide'); onSetupProceed()" style="background: #006644; border-color: #00ff88; font-weight: bold;">ブロック作成へ進む</button>
     </div>
     <div id="please-wait-box" style="display: none; flex-direction:column; align-items:center; text-align:center;">
       <h1 style="color:#ffd700; font-size: 24px;">please wait</h1>
@@ -900,7 +904,7 @@ canvas#game-canvas {
 <!-- ドラッグ中表示用 -->
 <canvas id="drag-ghost"></canvas>
 
-<!-- スピードモード最速到達時: WIN & 花火パーティクル演出 -->
+<!-- WIN 花火パーティクル演出 -->
 <div id="win-overlay">
   <canvas id="fireworks-canvas"></canvas>
   <div class="win-banner">
@@ -914,6 +918,29 @@ canvas#game-canvas {
 </div>
 
 <script>
+// ===
+// シングルプレイ専用 固定ブロック (添付画像 1.jpg 〜 8.jpg のピンク升のみ当たり判定あり)
+// ===
+const SINGLE_PRESET_BLOCKS = [
+  [[0, 1, 0], [1, 1, 1]],                 // 1: T字 (4マス)
+  [[1, 1], [1, 1]],                       // 2: 2x2正方形 (4マス)
+  [[1, 0], [1, 0], [1, 1]],               // 3: L字 (4マス)
+  [[0, 1], [1, 1], [1, 0]],               // 4: 縦S字 (4マス)
+  [[1, 1, 1, 1]],                         // 5: 横4マス棒 (4マス)
+  [[1, 0], [1, 1], [0, 1]],               // 6: 縦Z字 (4マス)
+  [[1, 1], [1, 1], [1, 1]],               // 7: 2x3長方形 (6マス)
+  [[1, 1, 1], [1, 1, 1], [1, 1, 1]]       // 8: 3x3正方形 (9マス)
+];
+
+function getSingleModePresetPool(mode) {
+  if (mode === 'challenge') {
+    // スコアチャレンジ: 1〜8の8種類
+    return SINGLE_PRESET_BLOCKS.slice(0, 8).map(m => m.map(r => [...r]));
+  }
+  // ノーマルモード: 1〜6の6種類
+  return SINGLE_PRESET_BLOCKS.slice(0, 6).map(m => m.map(r => [...r]));
+}
+
 // ===
 // BGM & 効果音設定
 // ===
@@ -1212,7 +1239,7 @@ async function refreshScoreboardView() {
     const rank = idx + 1;
     const cls = rank === 1 ? "top1" : (rank <= 3 ? "top3" : "");
     const badge = rank === 1 ? "1位" : `${rank}位`;
-    const modeLabel = entry.mode === "challenge" ? "チャレンジ" : (entry.mode === "speed" ? "スピード" : "ノーマル");
+    const modeLabel = entry.mode === "challenge" ? "チャレンジ" : "ノーマル";
     return `<div class="sb-row ${cls}">
       <span>${badge}: ${escapeHtml(entry.name || "匿名")} <small style="color:#888;">(${modeLabel})</small></span>
       <span><strong>${entry.score}点</strong></span>
@@ -1311,7 +1338,7 @@ let maxPlayers = 1;
 let playerIndex = 0;
 let connections = [];
 let guestConnection = null;
-let roomPlayers = {}; // { peerId: { name, isHost } }
+let roomPlayers = {};
 
 let completedPlayers = new Set();
 let okPlayers = new Set();
@@ -1378,15 +1405,62 @@ function syncGameModeOptionsForPlayers() {
     : parseInt(document.getElementById('player-count')?.value || '2', 10);
   const challengeOpt = document.getElementById('opt-score-challenge');
   const modeSelect = document.getElementById('game-mode-select');
+  const blockPickerWrap = document.getElementById('block-count-picker-wrap');
+  const singleNote = document.getElementById('single-preset-note');
+  const proceedBtn = document.getElementById('btn-setup-proceed');
+  const headingEl = document.getElementById('setup-heading');
+
   if (!challengeOpt || !modeSelect) return;
-  if (effectiveCount === 1) {
+
+  if (playType === 'single' || effectiveCount === 1) {
     challengeOpt.style.display = 'block';
+    if (blockPickerWrap) blockPickerWrap.style.display = 'none';
+    if (singleNote) singleNote.style.display = 'block';
+    if (headingEl) headingEl.innerText = 'ゲームモード選択';
   } else {
     challengeOpt.style.display = 'none';
     if (modeSelect.value === 'challenge') {
       modeSelect.value = 'normal';
     }
+    if (blockPickerWrap) blockPickerWrap.style.display = 'flex';
+    if (singleNote) singleNote.style.display = 'none';
+    if (headingEl) headingEl.innerText = 'ブロック種類数&モード';
   }
+
+  onModeSelectChange();
+}
+
+function onModeSelectChange() {
+  const modeSelect = document.getElementById('game-mode-select');
+  const proceedBtn = document.getElementById('btn-setup-proceed');
+  if (!modeSelect || !proceedBtn) return;
+  if (playType === 'single') {
+    proceedBtn.innerText = 'ゲームスタート';
+  } else {
+    proceedBtn.innerText = 'ブロック作成へ進む';
+  }
+}
+
+function onSetupProceed() {
+  if (playType === 'single') {
+    startSinglePlayerDirect();
+  } else {
+    distributeBlocksAndStartBuild();
+  }
+}
+
+function startSinglePlayerDirect() {
+  isHost = true;
+  maxPlayers = 1;
+  playerIndex = 0;
+  currentMode = document.getElementById('game-mode-select').value || 'normal';
+  sharedBlocks = getSingleModePresetPool(currentMode);
+  myBuiltBlocks = sharedBlocks.map(m => m.map(r => [...r]));
+  totalBlockCount = sharedBlocks.length;
+  finishedPlayersMap = {};
+  rematchReadyPlayers = new Set();
+  myFinishedSent = false;
+  startGameWithGoOverlay(currentMode, winTargetScore, sharedBlocks);
 }
 
 function showScreen(screenId) {
@@ -1519,7 +1593,6 @@ function confirmHostCountAndCreateRoom() {
         connections = connections.filter(conn => conn !== c);
         if (disconnectedId) {
           delete roomPlayers[disconnectedId];
-          // ゲーム中にゲストが切断された場合、フリーズ防止のため自動的にリタイア扱いにして進行チェック
           if (document.getElementById('screen-game').classList.contains('active') && !gameFinished) {
             if (!finishedPlayersMap[disconnectedId]) {
               finishedPlayersMap[disconnectedId] = {
@@ -1606,7 +1679,6 @@ function joinAsGuest() {
 function onHostLobbyNext() {
   if (!isHost) return;
   playSe('decide');
-  // 実際に接続している人数にmaxPlayersを確定させてズレを防ぐ
   maxPlayers = 1 + connections.length;
   broadcastToPeers({ type: 'go_host_setup', maxPlayers });
   showHostSetupScreen(true);
@@ -1778,13 +1850,9 @@ function openTargetScoreDialogForAll() {
   playSe('decide');
   okPlayers = new Set();
   myOkSent = false;
-  if (currentMode === 'speed') {
-    showTargetScoreDialog(true, winTargetScore);
-  } else {
-    okPlayers.add(getActorId());
-    broadcastToPeers({ type: 'normal_auto_ok' });
-    checkAllOkAndLaunchGo();
-  }
+  okPlayers.add(getActorId());
+  broadcastToPeers({ type: 'normal_auto_ok' });
+  checkAllOkAndLaunchGo();
 }
 
 function showTargetScoreDialog(isHostSetting, presetScore) {
@@ -1847,7 +1915,9 @@ function checkAllOkAndLaunchGo() {
 function startGameWithGoOverlay(mode, targetScore, blocksPool) {
   currentMode = mode;
   winTargetScore = targetScore;
-  if (Array.isArray(blocksPool) && blocksPool.length > 0) {
+  if (playType === 'single') {
+    sharedBlocks = getSingleModePresetPool(currentMode);
+  } else if (Array.isArray(blocksPool) && blocksPool.length > 0) {
     sharedBlocks = blocksPool;
   }
   document.getElementById('target-dialog-overlay').classList.remove('active');
@@ -1916,21 +1986,6 @@ function handlePeerMessage(data, senderConn) {
     rematchReadyPlayers = new Set();
     myFinishedSent = false;
     startGameWithGoOverlay(data.mode || currentMode, data.winTargetScore || winTargetScore, data.sharedBlocks);
-  } else if (data.type === 'first_win') {
-    if (data.winnerId) {
-      finishedPlayersMap[data.winnerId] = {
-        name: data.winnerName || 'プレイヤー',
-        score: data.score ?? 0,
-        status: 'WIN!!'
-      };
-    }
-    showRetireWaitOverlay(false);
-    triggerWinCelebration(data.winnerName, data.score, false);
-    if (isHost) {
-      connections.forEach(c => {
-        if (c !== senderConn && c.open) c.send(data);
-      });
-    }
   } else if (data.type === 'player_game_over' || data.type === 'player_retired') {
     if (data.playerId) {
       finishedPlayersMap[data.playerId] = {
@@ -1940,7 +1995,6 @@ function handlePeerMessage(data, senderConn) {
       };
     }
     if (isHost) {
-      // ホストは最新の全員状況と残り人数を全員へブロードキャストし、全員完了したか判定する
       const finishedCount = Object.keys(finishedPlayersMap).length;
       const remaining = Math.max(0, maxPlayers - finishedCount);
       broadcastToPeers({
@@ -2111,10 +2165,22 @@ function startResultFireworks() {
 }
 
 function getHostResultActionsHtml() {
+  if (playType === 'single') {
+    return `
+      <button onclick="playSe('decide'); singlePlayAgain()" style="background: #006600; border-color:#00ff00; font-weight:bold;">もう一度遊ぶ</button>
+      <button onclick="playSe('gameOver'); hostChooseEnd()" style="background: #551111; border-color:#ff5555;">終了</button>
+    `;
+  }
   return `
     <button onclick="playSe('decide'); hostChooseRematch()" style="background: #006600; border-color:#00ff00; font-weight:bold;">再戦</button>
     <button onclick="playSe('gameOver'); hostChooseEnd()" style="background: #551111; border-color:#ff5555;">終了</button>
   `;
+}
+
+function singlePlayAgain() {
+  finishedPlayersMap = {};
+  myFinishedSent = false;
+  showHostSetupScreen(true);
 }
 
 function showFinalResultScreen(mapObj) {
@@ -2137,7 +2203,6 @@ function showFinalResultScreen(mapObj) {
   document.getElementById('btn-guest-rematch-ready').style.display = 'none';
   document.getElementById('guest-result-wait-msg').innerText = 'ホストが再戦か終了を選択中です...';
 
-  // 得点が高い順にソートして順位を付与（ノーマルモードも最大得点が1位）
   const entries = Object.values(mapObj || {}).sort((a, b) => Number(b.score) - Number(a.score));
   if (entries.length === 0) {
     entries.push({ name: myName || 'プレイヤー', score, status: '終了' });
@@ -2154,7 +2219,6 @@ function showFinalResultScreen(mapObj) {
   const myEntry = entries.find(e => e.name === (myName || 'プレイヤー')) || entries[0];
   evaluateRankInAndShowEntry(myEntry ? Number(myEntry.score) : score);
 
-  // 得点下位から順番に発表（配列の逆順）
   const orderToAnnounce = [...ranked].reverse();
   const stepMs = 1400;
 
@@ -2162,7 +2226,6 @@ function showFinalResultScreen(mapObj) {
     const isLastWinner = (i === orderToAnnounce.length - 1);
     const tId = setTimeout(() => {
       if (isLastWinner && currentMode !== 'challenge') {
-        // 最後に最大得点者（1位）が表示されたら花火パーティクル + WIN表示
         playSe('win');
         startResultFireworks();
         announceEl.innerHTML = `
@@ -2188,7 +2251,6 @@ function showFinalResultScreen(mapObj) {
     announceTimers.push(tId);
   });
 
-  // 全員の順番発表完了後にランキング一覧とホストの「再戦」「終了」ボタンを表示
   const summaryTimer = setTimeout(() => {
     listEl.innerHTML = ranked.map((item) => {
       const isFirst = item.rank === 1;
@@ -2289,17 +2351,16 @@ function applyRandomAngle(matrix) {
 }
 
 function getCommonBlockPool() {
+  if (playType === 'single') {
+    return getSingleModePresetPool(currentMode);
+  }
   if (sharedBlocks.length > 0) return sharedBlocks;
   if (myBuiltBlocks.length > 0) return myBuiltBlocks;
-  return [
-    [[1, 1], [1, 1]],
-    [[1, 1, 1]],
-    [[1, 1, 0], [0, 1, 1]]
-  ];
+  return SINGLE_PRESET_BLOCKS.slice(0, 6);
 }
 
 function isPlacementMode(mode) {
-  return mode === 'speed' || mode === 'challenge';
+  return mode === 'challenge';
 }
 
 // ===
@@ -2354,8 +2415,8 @@ function initGame() {
     blockSize = Math.max(16, Math.min(34, maxByHeight, maxByWidth));
 
     currentIntervalMs = calcNormalIntervalMs(0);
-    document.getElementById('hud-target').innerText = '全員終了まで';
-    document.getElementById('hud-info').innerText = 'ノーマル (50点毎UP)';
+    document.getElementById('hud-target').innerText = playType === 'single' ? '限界に挑戦' : '全員終了まで';
+    document.getElementById('hud-info').innerText = playType === 'single' ? 'ノーマル (1-6 / 50点UP)' : 'ノーマル (50点毎UP)';
     leftNextBox.classList.add('active');
     dockArea.classList.remove('active');
     normalControls.style.display = 'flex';
@@ -2369,13 +2430,8 @@ function initGame() {
     const maxByWidth = Math.floor(usableWidth / boardWidth);
     blockSize = Math.max(22, Math.min(44, maxByHeight, maxByWidth));
 
-    if (currentMode === 'challenge') {
-      document.getElementById('hud-target').innerText = '限界に挑戦';
-      document.getElementById('hud-info').innerText = 'スコアチャレンジ';
-    } else {
-      document.getElementById('hud-target').innerText = `目標: ${winTargetScore}点`;
-      document.getElementById('hud-info').innerText = 'スピード';
-    }
+    document.getElementById('hud-target').innerText = '限界に挑戦';
+    document.getElementById('hud-info').innerText = 'スコアチャレンジ (1-8)';
     leftNextBox.classList.remove('active');
     dockArea.classList.add('active');
     normalControls.style.display = 'none';
@@ -2548,7 +2604,6 @@ function handleMyNormalGameOver(isSurrender = false) {
     return;
   }
 
-  // 他のプレイヤーが継続中なら画面中央に大きく「リタイア」を表示して待機
   const totalExpected = isHost ? (1 + connections.length) : maxPlayers;
   const remaining = Math.max(0, totalExpected - Object.keys(finishedPlayersMap).length);
   if (remaining > 0) {
@@ -2811,6 +2866,7 @@ function handleNoPlaceableBlockEnd(isSurrender) {
   }
 }
 
+// ピンク升(matrix[r][c] === 1)のみ当たり判定あり（0の空白升は透過・当たり判定なし）
 function checkCollision(px, py, matrix) {
   for (let r = 0; r < matrix.length; r++) {
     for (let c = 0; c < matrix[0].length; c++) {
@@ -2825,6 +2881,7 @@ function checkCollision(px, py, matrix) {
   return false;
 }
 
+// ピンク升(matrix[r][c] === 1)のみ盤面に固定
 function mergeMatrix(px, py, matrix) {
   for (let r = 0; r < matrix.length; r++) {
     for (let c = 0; c < matrix[0].length; c++) {
@@ -2891,50 +2948,6 @@ function clearRowsAndColsPlacement() {
   }
   score += clearedCount * 10;
   document.getElementById('hud-score').innerText = `${score}点`;
-
-  if (currentMode === 'speed' && score >= winTargetScore) {
-    const winnerName = myName || 'プレイヤー';
-    const winnerId = getActorId();
-    broadcastToPeers({ type: 'first_win', winnerId, winnerName, score });
-    triggerWinCelebration(winnerName, score, true);
-  }
-}
-
-function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
-  if (gameFinished) return;
-  playSe('win');
-  gameFinished = true;
-  waitingForOthersOver = false;
-  showRetireWaitOverlay(false);
-
-  if (gameInterval) {
-    clearInterval(gameInterval);
-    gameInterval = null;
-  }
-  document.getElementById('drag-ghost').style.display = 'none';
-  draggingDockIndex = -1;
-  dragMatrix = null;
-
-  const actorId = getActorId();
-  if (isLocalWinner) {
-    finishedPlayersMap[actorId] = {
-      name: myName || 'プレイヤー',
-      score: winnerScore,
-      status: 'WIN!!'
-    };
-  }
-
-  const overlay = document.getElementById('win-overlay');
-  const actions = document.getElementById('win-actions');
-  document.getElementById('win-player-name').innerText = `${winnerName} (${winnerScore}点)`;
-  actions.classList.remove('show');
-  overlay.classList.add('active');
-  startFireworks();
-
-  if (winActionTimer) clearTimeout(winActionTimer);
-  winActionTimer = setTimeout(() => {
-    actions.classList.add('show');
-  }, 1800);
 }
 
 function hideWinCelebration() {
@@ -2948,62 +2961,6 @@ function hideWinCelebration() {
     cancelAnimationFrame(fireworksAnimId);
     fireworksAnimId = null;
   }
-}
-
-function startFireworks() {
-  const fwCanvas = document.getElementById('fireworks-canvas');
-  const fwCtx = fwCanvas.getContext('2d');
-  fwCanvas.width = window.innerWidth;
-  fwCanvas.height = window.innerHeight;
-  const particles = [];
-  const colors = ['#ff00ff', '#00ffff', '#ffd700', '#00ff88', '#ff5555', '#ffffff'];
-
-  function spawnBurst() {
-    const cx = Math.random() * fwCanvas.width * 0.8 + fwCanvas.width * 0.1;
-    const cy = Math.random() * fwCanvas.height * 0.45 + fwCanvas.height * 0.1;
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    for (let i = 0; i < 36; i++) {
-      const angle = (Math.PI * 2 * i) / 36;
-      const speed = 1.8 + Math.random() * 3.8;
-      particles.push({
-        x: cx,
-        y: cy,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        alpha: 1,
-        color
-      });
-    }
-  }
-
-  spawnBurst();
-  spawnBurst();
-  let tick = 0;
-  function loop() {
-    fwCtx.fillStyle = 'rgba(10, 10, 20, 0.22)';
-    fwCtx.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
-    tick++;
-    if (tick % 26 === 0) spawnBurst();
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.05;
-      p.alpha -= 0.01;
-      if (p.alpha <= 0) {
-        particles.splice(i, 1);
-        continue;
-      }
-      fwCtx.globalAlpha = Math.max(0, p.alpha);
-      fwCtx.fillStyle = p.color;
-      fwCtx.beginPath();
-      fwCtx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-      fwCtx.fill();
-    }
-    fwCtx.globalAlpha = 1;
-    fireworksAnimId = requestAnimationFrame(loop);
-  }
-  loop();
 }
 
 function rematchGame() {
