@@ -61,8 +61,8 @@ html, body {
 }
 .screen.active { display: flex; }
 h1, h3 { color: #00ffff; text-align: center; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
-h1 { font-size: 21px; margin: 4px 0; }
-h3 { font-size: 16px; margin: 6px 0; }
+h1 { font-size: 21px; margin: 6px 0; }
+h3 { font-size: 16px; margin: 4px 0; }
 .version {
   color: #00ff00;
   font-size: 12px;
@@ -533,8 +533,8 @@ canvas#game-canvas {
   align-items: center;
 }
 #sequential-announcement {
-  min-height: 40px;
-  font-size: 17px;
+  min-height: 68px;
+  font-size: 18px;
   font-weight: bold;
   color: #ffd700;
   text-align: center;
@@ -625,17 +625,17 @@ canvas#game-canvas {
   <!-- ① タイトル画面 -->
   <div id="screen-title" class="screen active">
     <h1>■ ブロック崩し ■</h1>
-    <div class="version">Ver 3.0 (-WING-)</div>
+    <div class="version">Ver 3.1 (-WING-)</div>
     <button onclick="playSe('decide'); showScreen('screen-play-type')" style="background: #330033; border-color:#ff00ff; color: #ff00ff;">- スタート -</button>
     <button onclick="playSe('decide'); openScoreboardScreen('screen-title')" style="background: #152836; border-color:#00ffff; color:#00ffff;">☆ 共通スコアボード(上位10) ☆</button>
   </div>
 
-  <!-- ①-B シングルプレイ/マルチプレイ選択画面 -->
+  <!-- シングルプレイ/マルチプレイ選択画面 -->
   <div id="screen-play-type" class="screen">
     <h1>プレイ人数タイプ選択</h1>
     <p class="note-text">シングルプレイまたはマルチプレイを選んでください</p>
     <button onclick="playSe('decide'); selectPlayType('single')" style="background: #004466; border-color:#00ffff; font-weight: bold;">シングルプレイ(1人)</button>
-    <button onclick="playSe('decide'); selectPlayType('multi')" style="background:#440044; border-color:#ff00ff; font-weight: bold;">マルチプレイ(通信対戦)</button>
+    <button onclick="playSe('decide'); selectPlayType('multi')" style="background: #440044; border-color:#ff00ff; font-weight: bold;">マルチプレイ(通信対戦)</button>
     <button onclick="playSe('cursor'); showScreen('screen-title')" style="border-color:#ff5555; color: #ff5555; margin-top: 14px;">もどる</button>
   </div>
 
@@ -654,7 +654,7 @@ canvas#game-canvas {
     <p class="note-text">ホストまたはゲストを選んでください</p>
     <button onclick="playSe('decide'); showScreen('screen-host-count')" style="background: #004444;">ホスト</button>
     <button onclick="playSe('decide'); showGuestJoinBox()" style="background: #440044;">ゲスト</button>
-    <div id="guest-join-box" style="display: none; width:100%; flex-direction:column; align-items:center; margin-top:8px;">
+    <div id="guest-join-box" style="display: none; width: 100%; flex-direction:column; align-items:center; margin-top:8px;">
       <input type="text" id="room-key-input" placeholder="4桁の参加番号" maxlength="4" inputmode="numeric" oninput="playSe('cursor')">
       <button onclick="joinAsGuest()" style="background:#005500;">参加する</button>
     </div>
@@ -676,9 +676,9 @@ canvas#game-canvas {
     <button onclick="playSe('cursor'); showScreen('screen-role')" style="border-color:#ff5555; color:#ff5555; margin-top: 12px;">もどる</button>
   </div>
 
-  <!-- ⑤ 参加番号表示,接続待ち・【次に】ボタン -->
+  <!-- ⑤ 参加番号表示・接続待ち・「次に」ボタン -->
   <div id="screen-lobby" class="screen">
-    <div id="key-display" style="font-size: 28px; color: #00ff00; margin:8px 0; font-weight:bold;">参加番号: </div>
+    <div id="key-display" style="font-size: 28px; color: #00ff00; margin:8px 0; font-weight:bold;">参加番号:</div>
     <h3 id="lobby-status">接続待ち</h3>
     <p id="connection-count" style="font-size: 14px; color:#ccc; margin:6px 0;">0 / 0人</p>
     <button id="btn-lobby-next" class="dim-btn" onclick="onHostLobbyNext()" disabled>次に</button>
@@ -718,12 +718,12 @@ canvas#game-canvas {
     <div id="builder-assign-badge" class="assign-badge">あなたは○個ブロックを作成してください</div>
     <h3 id="builder-instruction">作成済み: 0/0個</h3>
     <div id="builder-canvas-container" style="display: flex; justify-content: center; align-items:center; min-height: 165px;"></div>
-    <button id="btn-toggle-size" onclick="toggleBuilderSize()" style="background: #224; border-color:#88ff88; color:#88ff88; padding: 8px 14px; font-size: 13px;">モード切替: 3×3</button>
+    <button id="btn-toggle-size" onclick="toggleBuilderSize()" style="background: #224; border-color: #88ff88; color:#88ff88; padding: 8px 14px; font-size: 13px;">モード切替: 3×3</button>
     <button onclick="addCurrentBlockToMine()" style="background: #004466; border-color: #00ffff;">このブロックを追加</button>
     <button id="btn-complete-blocks" class="dim-btn" onclick="submitMyBlocksDone()" disabled>完了</button>
   </div>
 
-  <!-- ⑧ 作成完了待ち&ホストの【レディー】ボタン画面 -->
+  <!-- ⑧ 作成完了待ち&ホストの「レディー」ボタン画面 -->
   <div id="screen-ready" class="screen">
     <h1 id="ready-title">ブロック作成確認</h1>
     <p id="ready-status-text" style="font-size: 14px; color:#ccc; text-align:center; margin: 10px 0;"></p>
@@ -812,8 +812,8 @@ canvas#game-canvas {
     <p id="scoreboard-source-note" class="note-text" style="color:#00ff88;"></p>
     <div id="scoreboard-list" class="scoreboard-list"></div>
     <button onclick="playSe('decide'); refreshScoreboardView()" style="background: #004444; border-color:#00ffff; padding: 9px 14px; font-size:13px;">更新する</button>
-    <button onclick="resetScoreboardWithPassword()" style="background: #4a1414; border-color: #ff6666; color:#ffaaaa; padding: 9px 14px; font-size: 13px;">スコアリセット</button>
-    <button onclick="playSe('cursor'); closeScoreboardScreen()" style="border-color: #ff5555; color:#ff5555; margin-top:10px;">もどる</button>
+    <button onclick="resetScoreboardWithPassword()" style="background: #4a1414; border-color: #ff6666; color: #ffaaaa; padding: 9px 14px; font-size: 13px;">スコア reset / リセット</button>
+    <button onclick="playSe('cursor'); closeScoreboardScreen()" style="border-color: #ff5555; color:#ff5555; margin-top: 10px;">もどる</button>
   </div>
 </div>
 
@@ -831,16 +831,16 @@ canvas#game-canvas {
         <option value="1000">1000点</option>
       </select>
     </div>
-    <div id="guest-target-display" style="display:none; flex-direction:column; align-items:center;">
+    <div id="guest-target-display" style="display:none; flex-direction: column; align-items:center;">
       <p class="note-text">ホストが設定した勝利条件</p>
-      <div id="guest-target-value" style="font-size:26px; font-weight:bold; color:#ffd700; margin:8px 0;">30点</div>
+      <div id="guest-target-value" style="font-size: 26px; font-weight:bold; color:#ffd700; margin:8px 0;">300点</div>
     </div>
     <button id="btn-dialog-ok" onclick="confirmTargetScoreOk()" style="width: 100%; background: #007700; border-color:#00ff00; font-weight: bold;">OK</button>
     <p id="dialog-ok-status" class="note-text" style="color:#ffd700; margin-top:8px;"></p>
   </div>
 </div>
 
-<!-- ゲーム開始時「GO!」中央表示 -->
+<!-- ゲーム開始時 「GO!」中央表示 -->
 <div id="go-overlay">
   <div class="go-text">GO!</div>
 </div>
@@ -856,15 +856,15 @@ canvas#game-canvas {
     <div class="win-title-text">WIN!!</div>
   </div>
   <div id="win-actions">
-    <button onclick="playSe('decide'); rematchGame()" style="background:#007700; border-color:#00ff00; font-weight:bold;">再戦する</button>
+    <button onclick="playSe('decide'); rematchGame()" style="background:#007700; border-color:#00ff00; font-weight: bold;">再戦する</button>
     <button onclick="playSe('gameOver'); finishFromWin()" style="background:#441111; border-color:#ff5555;">終了する</button>
   </div>
 </div>
 
 <script>
-// =========================================================================
+// ===
 // BGM (MP3 または WAV形式) & 効果音(8種類)設定
-// =========================================================================
+// ===
 const BGM_TRACKS = [
   "./bgm1.mp3",
   "./bgm2.mp3",
@@ -1041,9 +1041,9 @@ document.addEventListener('pointerdown', () => {
   }
 }, { once: false });
 
-// =========================================================================
+// ===
 // JSONBin 固定設定 (画面からは変更不可) & スコアリセット設定
-// =========================================================================
+// ===
 const DEFAULT_JSONBIN_ID = "";
 const DEFAULT_JSONBIN_MASTER_KEY = "";
 const LOCAL_SCOREBOARD_KEY = "wing_block_local_scoreboard_v1";
@@ -1225,7 +1225,7 @@ async function submitScoreToGlobalBoard() {
   if (status) status.innerText = `登録完了! (${saveRes.source})`;
 }
 
-// --- ズーム防止 (ピンチ・ダブルタップ連打) ---
+// --- ズーム防止(ピンチ・ダブルタップ連打)
 let lastTouchEndTime = 0;
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
@@ -1267,7 +1267,7 @@ let rematchReadyPlayers = new Set();
 let myDoneSent = false;
 let myOkSent = false;
 let myFinishedSent = false;
-let winTargetScore = 30;
+let winTargetScore = 300;
 let gameFinished = false;
 let waitingForOthersOver = false;
 let fireworksAnimId = null;
@@ -1321,13 +1321,11 @@ function showScreen(screenId) {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(screenId).classList.add('active');
-
   if (screenId === 'screen-title' || screenId === 'screen-game') {
     playRandomBgm(true);
   } else if (!audioMuted && (!bgmAudioEl || bgmAudioEl.paused)) {
     playRandomBgm(false);
   }
-
   if (screenId === 'screen-host-count') syncGameModeOptionsForPlayers();
   else if (screenId === 'screen-host-setup') {
     document.getElementById('host-setup-controls').style.display = 'flex';
@@ -1339,9 +1337,9 @@ function showScreen(screenId) {
 
 function submitName() {
   const val = document.getElementById('player-name-input').value.trim();
-  if (!val.match(/^[ぁ-んー]{1,6}$/)) {
+  if (!val.match(/^[ぁ-ん一-龠ー]{1,6}$/)) {
     playSe('cursor');
-    alert('ひらがな 1~6文字で入力してください');
+    alert('ひらがな1〜6文字で入力してください');
     return;
   }
   playSe('decide');
@@ -1404,7 +1402,6 @@ function confirmHostCountAndCreateRoom() {
   okPlayers = new Set();
   finishedPlayersMap = {};
   rematchReadyPlayers = new Set();
-
   try {
     peer = new Peer('wing_block_' + roomKey);
     peer.on('open', (id) => {
@@ -1466,7 +1463,6 @@ function joinAsGuest() {
   myOkSent = false;
   myFinishedSent = false;
   finishedPlayersMap = {};
-
   try {
     peer = new Peer();
     peer.on('open', (id) => {
@@ -1478,7 +1474,6 @@ function joinAsGuest() {
         document.getElementById('connection-count').innerText = '接続完了';
         setButtonLit('btn-lobby-next', false);
         guestConnection.send({ type: 'guest_joined', senderId: myId, name: myName });
-        showScreen('screen-lobby');
       });
       guestConnection.on('data', (data) => {
         if (data && data.type === 'full') {
@@ -1489,6 +1484,7 @@ function joinAsGuest() {
         handlePeerMessage(data, guestConnection);
       });
     });
+    showScreen('screen-lobby');
     peer.on('error', () => {
       alert('参加番号が見つかりません。');
     });
@@ -1525,7 +1521,6 @@ function distributeBlocksAndStartBuild() {
   myDoneSent = false;
   myOkSent = false;
   myFinishedSent = false;
-
   if (playType === 'multi') {
     connections.forEach((c, idx) => {
       const pIdx = idx + 1;
@@ -1698,7 +1693,7 @@ function confirmTargetScoreOk() {
   document.getElementById('dialog-ok-status').innerText = '他のプレイヤーのOK待ち...';
   const actorId = myId || ('local_' + myName);
   if (isHost) {
-    winTargetScore = parseInt(document.getElementById('dialog-win-score').value, 10) || 30;
+    winTargetScore = parseInt(document.getElementById('dialog-win-score').value, 10) || 300;
     okPlayers.add(actorId);
     broadcastToPeers({ type: 'show_target_dialog_to_guest', winTargetScore });
     checkAllOkAndLaunchGo();
@@ -1745,7 +1740,6 @@ function startGameWithGoOverlay(mode, targetScore, blocksPool) {
 
 function handlePeerMessage(data, senderConn) {
   if (!data || !data.type) return;
-
   if (data.type === 'go_host_setup') {
     showHostSetupScreen(false);
   } else if (data.type === 'start_build') {
@@ -1773,10 +1767,9 @@ function handlePeerMessage(data, senderConn) {
       updateReadyScreenForHost();
     }
   } else if (data.type === 'show_target_dialog_to_guest') {
-    winTargetScore = data.winTargetScore || 30;
+    winTargetScore = data.winTargetScore || 300;
     showTargetScoreDialog(false, winTargetScore);
   } else if (data.type === 'normal_auto_ok') {
-    // ★修正: ゲストがノーマルモードの自動OK通知を受け取ったらホストへ player_ok を返送
     if (!isHost && guestConnection && guestConnection.open) {
       const actorId = myId || ('local_' + myName);
       guestConnection.send({ type: 'player_ok', senderId: actorId });
@@ -1810,7 +1803,7 @@ function handlePeerMessage(data, senderConn) {
       finishedPlayersMap[data.playerId] = {
         name: data.name || 'プレイヤー',
         score: data.score ?? 0,
-        status: data.status || (data.type === 'player_retired' ? 'リタイア' : 'ゲームオーバー')
+        status: data.status || 'リタイア'
       };
     }
     if (isHost) {
@@ -1825,7 +1818,6 @@ function handlePeerMessage(data, senderConn) {
     showFinalResultScreen(finishedPlayersMap);
   } else if (data.type === 'host_rematch_selected') {
     if (!isHost) {
-      // 勝利オーバーレイが出ている場合は閉じて結果発表画面へ誘導
       hideWinCelebration();
       if (!document.getElementById('screen-result').classList.contains('active')) {
         const actorId = myId || ('local_' + myName);
@@ -1836,7 +1828,8 @@ function handlePeerMessage(data, senderConn) {
       }
       document.getElementById('guest-result-actions').style.display = 'flex';
       document.getElementById('guest-result-wait-msg').innerText = 'ホストが再戦を選びました! レディーを押してください';
-      document.getElementById('btn-guest-rematch-ready').style.display = 'block';
+      const readyBtn = document.getElementById('btn-guest-rematch-ready');
+      readyBtn.style.display = 'block';
       setButtonLit('btn-guest-rematch-ready', true);
     }
   } else if (data.type === 'guest_rematch_ready') {
@@ -1904,7 +1897,7 @@ function startResultFireworks() {
 
   function spawnBurst() {
     const cx = Math.random() * fwCanvas.width * 0.8 + fwCanvas.width * 0.1;
-    const cy = Math.random() * fwCanvas.height * 0.45 + fwCanvas.height * 0.08;
+    const cy = Math.random() * fwCanvas.height * 0.45 + fwCanvas.height * 0.1;
     const color = colors[Math.floor(Math.random() * colors.length)];
     for (let i = 0; i < 32; i++) {
       const angle = (Math.PI * 2 * i) / 32;
@@ -1963,9 +1956,10 @@ function showFinalResultScreen(mapObj) {
   stopResultFireworks();
   showScreen('screen-result');
   document.getElementById('result-title').innerText = currentMode === 'challenge' ? 'スコアチャレンジ 得点発表' : '結果発表';
+
   const announceEl = document.getElementById('sequential-announcement');
   const listEl = document.getElementById('result-list');
-  announceEl.innerText = '';
+  announceEl.innerHTML = '';
   listEl.innerHTML = '';
 
   const hostActions = document.getElementById('host-result-actions');
@@ -1992,34 +1986,57 @@ function showFinalResultScreen(mapObj) {
   const myEntry = entries.find(e => e.name === (myName || 'プレイヤー')) || entries[0];
   evaluateRankInAndShowEntry(myEntry ? myEntry.score : score);
 
+  // 最下位から順番に発表（配列の逆順）
   const orderToAnnounce = [...ranked].reverse();
-  const stepMs = 1100;
+  const stepMs = 1300;
+
   orderToAnnounce.forEach((item, i) => {
+    const isLastWinner = (i === orderToAnnounce.length - 1);
     const tId = setTimeout(() => {
-      playSe('resultAnnounce');
-      announceEl.innerText = `${item.rank}位: ${item.name} (${item.score}点)`;
+      if (isLastWinner && currentMode !== 'challenge') {
+        // 最後のプレイヤー(1位)発表時: WIN!!表示 + 花火パーティクル + 勝利音
+        playSe('win');
+        startResultFireworks();
+        announceEl.innerHTML = `
+          <div style="font-size: 20px; color: #00ffff; margin-bottom: 4px;">
+            ${item.rank}位: ${escapeHtml(item.name)} (${item.score}点)
+          </div>
+          <div style="font-size: 36px; color: #ffd700; text-shadow: 0 0 16px #ff00ff, 0 0 28px #ffd700; letter-spacing: 3px;">
+            WIN!!
+          </div>
+        `;
+      } else {
+        playSe('resultAnnounce');
+        announceEl.innerHTML = `
+          <div style="font-size: 20px; color: #fff;">
+            ${item.rank}位: <span style="color:#00ffff;">${escapeHtml(item.name)}</span>
+          </div>
+          <div style="font-size: 24px; color: #ffd700;">
+            ${item.score}点
+          </div>
+        `;
+      }
     }, i * stepMs);
     announceTimers.push(tId);
   });
 
+  // 全員の順番発表完了後にランキング一覧とホスト限定ボタンを表示
   const summaryTimer = setTimeout(() => {
-    playSe('resultAnnounce');
-    announceEl.innerText = '最終ランキング一覧';
     listEl.innerHTML = ranked.map((item) => {
       const isFirst = item.rank === 1;
       const crownHtml = isFirst ? `<span class="crown-mark">👑</span>` : '';
-      const subTag = item.status ? ` [${item.status}]` : '';
+      const subTag = item.status ? ` [${escapeHtml(item.status)}]` : '';
       return `<div class="result-item ${isFirst ? 'rank-1' : ''}">
         ${crownHtml}<span>${item.rank}位: <strong>${escapeHtml(item.name)}</strong> ${item.score}点${subTag}</span>
       </div>`;
     }).join('');
-    startResultFireworks();
+
     if (isHost) {
       hostActions.style.display = 'flex';
     } else {
       guestActions.style.display = 'flex';
     }
-  }, orderToAnnounce.length * stepMs + 500);
+  }, orderToAnnounce.length * stepMs + 700);
   announceTimers.push(summaryTimer);
 }
 
@@ -2032,7 +2049,7 @@ function hostChooseRematch() {
     checkAllRematchReadyAndStartBuild();
   } else {
     document.getElementById('host-result-actions').innerHTML =
-      `<p class="note-text" style="color:#00ff88; font-size:13px;">他プレイヤーの「レディー」待ち...</p>`;
+      `<p class="note-text" style="color:#00ff88; font-size: 13px;">他プレイヤーの「レディー」待ち...</p>`;
   }
 }
 
@@ -2066,7 +2083,6 @@ function checkAllRematchReadyAndStartBuild() {
     myDoneSent = false;
     myOkSent = false;
     myFinishedSent = false;
-
     if (playType === 'multi') {
       connections.forEach((c, idx) => {
         const count = allocations[idx + 1] ?? 1;
@@ -2084,7 +2100,7 @@ function checkAllRematchReadyAndStartBuild() {
   }
 }
 
-// --- 回転ユーティリティ (90° / 180° / 270° / 360°) ---
+// 回転ユーティリティ (90° / 180° / 270° / 360°)
 function rotateMatrix90(matrix) {
   return matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
 }
@@ -2202,8 +2218,8 @@ function initGame() {
   if (currentMode === 'normal') {
     nextPiece = createRandomCommonPiece();
     spawnNormalPiece();
-    drawGame();
     drawNextPiece();
+    drawGame();
     resetGameInterval(currentIntervalMs);
   } else {
     initSpeedDock();
@@ -2329,22 +2345,29 @@ function handleMyNormalGameOver() {
   playSe('gameOver');
   myFinishedSent = true;
   waitingForOthersOver = true;
+
   if (gameInterval) {
     clearInterval(gameInterval);
     gameInterval = null;
   }
+
   const actorId = myId || ('local_' + myName);
   const record = {
     name: myName || 'プレイヤー',
     score,
-    status: 'ゲームオーバー'
+    status: 'リタイア'
   };
   finishedPlayersMap[actorId] = record;
+
+  document.getElementById('hud-info').innerText = 'リタイア';
+  document.getElementById('top-status-banner').innerText = 'リタイア：他プレイヤーゲーム完了待ちです。';
+
   const payload = {
     type: 'player_game_over',
     playerId: actorId,
     ...record
   };
+
   if (playType === 'single' || maxPlayers === 1) {
     waitingForOthersOver = false;
     showFinalResultScreen(finishedPlayersMap);
@@ -2352,8 +2375,8 @@ function handleMyNormalGameOver() {
     checkAllPlayersFinishedInRoom();
   } else if (guestConnection && guestConnection.open) {
     guestConnection.send(payload);
-    document.getElementById('top-status-banner').innerText = '他プレイヤー終了待ち...';
   } else {
+    waitingForOthersOver = false;
     showFinalResultScreen(finishedPlayersMap);
   }
 }
@@ -2528,7 +2551,6 @@ function handleNoPlaceableBlockEnd(isSurrender) {
   draggingDockIndex = -1;
   dragMatrix = null;
   const actorId = myId || ('local_' + myName);
-
   if (currentMode === 'challenge') {
     gameFinished = true;
     finishedPlayersMap[actorId] = {
@@ -2539,11 +2561,10 @@ function handleNoPlaceableBlockEnd(isSurrender) {
     showFinalResultScreen(finishedPlayersMap);
     return;
   }
-
   waitingForOthersOver = true;
   const statusLabel = isSurrender ? 'リタイア(降参)' : 'リタイア';
   document.getElementById('hud-info').innerText = 'リタイア';
-  document.getElementById('top-status-banner').innerText = 'リタイア (他プレイヤー終了待ち)';
+  document.getElementById('top-status-banner').innerText = 'リタイア：他プレイヤーゲーム完了待ちです。';
   const record = {
     name: myName || 'プレイヤー',
     score,
@@ -2555,7 +2576,6 @@ function handleNoPlaceableBlockEnd(isSurrender) {
     playerId: actorId,
     ...record
   };
-
   if (playType === 'single' || maxPlayers === 1) {
     gameFinished = true;
     waitingForOthersOver = false;
@@ -2565,9 +2585,9 @@ function handleNoPlaceableBlockEnd(isSurrender) {
   } else if (guestConnection && guestConnection.open) {
     guestConnection.send(payload);
   } else {
-    gameFinished = true;
     waitingForOthersOver = false;
     showFinalResultScreen(finishedPlayersMap);
+    gameFinished = true;
   }
 }
 
@@ -2650,7 +2670,6 @@ function clearRowsAndColsPlacement() {
   }
   score += clearedCount * 10;
   document.getElementById('hud-score').innerText = `${score}点`;
-
   if (currentMode === 'speed' && score >= winTargetScore) {
     const winnerName = myName || 'プレイヤー';
     const winnerId = myId || ('local_' + myName);
@@ -2671,7 +2690,6 @@ function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
   document.getElementById('drag-ghost').style.display = 'none';
   draggingDockIndex = -1;
   dragMatrix = null;
-
   const actorId = myId || ('local_' + myName);
   if (isLocalWinner) {
     finishedPlayersMap[actorId] = {
@@ -2680,14 +2698,12 @@ function triggerWinCelebration(winnerName, winnerScore, isLocalWinner) {
       status: 'WIN!!'
     };
   }
-
   const overlay = document.getElementById('win-overlay');
   const actions = document.getElementById('win-actions');
   document.getElementById('win-player-name').innerText = `${winnerName} (${winnerScore}点)`;
   actions.classList.remove('show');
   overlay.classList.add('active');
   startFireworks();
-
   if (winActionTimer) clearTimeout(winActionTimer);
   winActionTimer = setTimeout(() => {
     actions.classList.add('show');
